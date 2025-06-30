@@ -1,0 +1,15 @@
+create table public.resumes (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid null,
+  resume_md text not null,
+  created_at timestamp with time zone null default now(),
+  constraint resumes_pkey primary key (id),
+  constraint resumes_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create table public.usage_stats (
+  user_id uuid not null,
+  total_runs integer not null default 0,
+  constraint usage_stats_pkey primary key (user_id),
+  constraint usage_stats_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
