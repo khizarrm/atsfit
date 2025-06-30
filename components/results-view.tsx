@@ -43,20 +43,6 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
     )
   }
   
-  if (optimizedResume.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-red-400 text-center">
-          <h2 className="text-2xl font-bold mb-4">Error</h2>
-          <p>Empty resume data received. Please try again.</p>
-          <button onClick={onBack} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded">
-            Go Back
-          </button>
-        </div>
-      </div>
-    )
-  }
-  
   const [copied, setCopied] = useState(false)
   const [calculatedFinalScore, setCalculatedFinalScore] = useState<number | null>(finalAtsScore || null)
   const [isCalculatingFinalScore, setIsCalculatingFinalScore] = useState(false)

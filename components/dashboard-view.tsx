@@ -121,7 +121,7 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
       
       let finalAtsScore: number | undefined = undefined
       const optimizedResume = rewriteResult.optimized_resume || rewriteResult
-      
+
       // Validate optimizedResume is a string
       if (typeof optimizedResume !== 'string') {
         throw new Error("Invalid resume format received from API")

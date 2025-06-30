@@ -150,7 +150,7 @@ class PDFConverter {
 
       return {
         success: true,
-        method: 'ats-friendly' as PDFGenerationMethod,
+        method: 'ats-friendly' as const,
         filename,
         size: htmlContent.length
       }

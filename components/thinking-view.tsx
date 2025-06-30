@@ -37,7 +37,6 @@ export default function ThinkingView({ onComplete, jobDescription }: ThinkingVie
         
         // Step 2: Annotate
         setCurrentText("Matching keywords and skills...")
-        await annotateResume()
         
         // Step 3: Rewrite
         setCurrentText("Optimizing resume structure...")
