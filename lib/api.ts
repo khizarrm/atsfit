@@ -1,5 +1,7 @@
+import { HOST_URL } from './variables';
+
 export async function fetchJobResearch(jobUrl: string, resumeMd: string, abortSignal?: AbortSignal) {
-  const res = await fetch("http://localhost:8000/api/research", {
+  const res = await fetch(`${HOST_URL}/research`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -31,7 +33,7 @@ export async function fetchJobResearch(jobUrl: string, resumeMd: string, abortSi
 }
 
 export async function annotateResume(keywords: string[], jobDescription: string, userNotes: string, abortSignal?: AbortSignal) {
-  const res = await fetch("http://localhost:8000/api/annotate", {
+  const res = await fetch(`${HOST_URL}/api/annotate`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -57,7 +59,7 @@ export async function annotateResume(keywords: string[], jobDescription: string,
 }
 
 export async function rewriteResume(abortSignal?: AbortSignal) {
-  const res = await fetch("http://localhost:8000/api/rewrite", {
+  const res = await fetch(`${HOST_URL}/api/rewrite`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -176,7 +178,7 @@ export async function fetchAtsScore(abortSignal?: AbortSignal, resumeType: 'old'
     "resume-type": resumeType  // Pass resume-type as header
   };
   
-  const res = await fetch("http://localhost:8000/api/ats-score", {
+  const res = await fetch(`${HOST_URL}/api/ats-score`, {
     method: "POST",
     headers,
     body: JSON.stringify({}), // Empty body since API reads from files
