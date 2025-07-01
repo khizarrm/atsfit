@@ -71,8 +71,7 @@ export function SharedHeader({
         <div className="relative" ref={dropdownRef}>
           <Button 
             variant="ghost" 
-            size="icon" 
-            className="text-white hover:bg-white/10 hover:text-white"
+            className="text-white hover:bg-white/10 hover:text-white h-10 px-2 flex items-center"
             onClick={() => setShowProfileDropdown(!showProfileDropdown)}
           >
             <User className="h-5 w-5" />

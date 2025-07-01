@@ -8,6 +8,7 @@ import { Download, Copy, ArrowLeft, Eye, EyeOff, Crown, Lock, Sparkles, User, In
 import { convertMarkdownToPDF, PDFGenerationResult } from "@/lib/pdf-converter"
 import { PDFGenerationProgress } from "@/lib/types/pdf"
 import { SharedHeader } from "@/components/shared-header"
+import { renderMarkdownPreview } from "@/lib/utils/preview-renderer"
 
 interface User {
   id: string
@@ -44,6 +45,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
   }
   
   const [copied, setCopied] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
   const [calculatedFinalScore, setCalculatedFinalScore] = useState<number | null>(finalAtsScore || null)
   const [isCalculatingFinalScore, setIsCalculatingFinalScore] = useState(false)
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
@@ -185,18 +187,18 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
             )}
           </div>
 
-          {/* Modern 3-Column Grid Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Modern Layout - Responsive Grid */}
+          <div className="grid gap-6 grid-cols-1 lg:grid-cols-4">
             
             {/* Left Column: Stats Cards */}
-            <div className="lg:col-span-1 space-y-6">
+            <div className="lg:col-span-1 space-y-4">
               
               {/* ATS Score Improvement Card */}
               <motion.div
                 initial={{ x: -30, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                className="bg-gradient-to-br from-[#00FFAA]/10 via-[#00DD99]/5 to-[#00FFAA]/10 border border-[#00FFAA]/30 rounded-2xl p-6 backdrop-blur-xl relative overflow-hidden"
+                className="bg-gradient-to-br from-[#00FFAA]/10 via-[#00DD99]/5 to-[#00FFAA]/10 border border-[#00FFAA]/30 rounded-xl p-5 backdrop-blur-xl relative overflow-hidden"
               >
                 {/* Animated Background Glow */}
                 <motion.div
@@ -208,17 +210,17 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                 />
                 
                 <div className="relative z-10">
-                  <h3 className="text-white font-semibold mb-6 text-lg flex items-center">
-                    <Sparkles className="w-5 h-5 mr-2 text-[#00FFAA]" />
+                  <h3 className="text-white font-semibold mb-5 text-base flex items-center">
+                    <Sparkles className="w-4 h-4 mr-2 text-[#00FFAA]" />
                     ATS Score Impact
                   </h3>
                   
-                  <div className="space-y-6">
+                  <div className="space-y-5">
                     {/* Before Score Circle */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className="relative">
-                          <div className={`w-12 h-12 rounded-full border-2 flex items-center justify-center ${
+                          <div className={`w-11 h-11 rounded-full border-2 flex items-center justify-center ${
                             typeof initialAtsScore === 'number' 
                               ? initialAtsScore >= 70 
                                 ? 'bg-green-500/20 border-green-400/60' 
@@ -277,7 +279,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                         <div className="relative">
                           {isCalculatingFinalScore ? (
                             <motion.div 
-                              className="w-12 h-12 rounded-full bg-[#00FFAA]/10 border-2 border-[#00FFAA]/50 flex items-center justify-center"
+                              className="w-11 h-11 rounded-full bg-[#00FFAA]/10 border-2 border-[#00FFAA]/50 flex items-center justify-center"
                               animate={{ 
                                 borderColor: ["rgba(0,255,170,0.3)", "rgba(0,255,170,0.8)", "rgba(0,255,170,0.3)"],
                                 boxShadow: [
@@ -296,7 +298,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                             </motion.div>
                           ) : calculatedFinalScore ? (
                             <motion.div 
-                              className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00FFAA]/20 to-[#00DD99]/20 border-2 border-[#00FFAA] flex items-center justify-center relative"
+                              className="w-11 h-11 rounded-full bg-gradient-to-br from-[#00FFAA]/20 to-[#00DD99]/20 border-2 border-[#00FFAA] flex items-center justify-center relative"
                               animate={{ 
                                 boxShadow: [
                                   "0 0 0px rgba(0,255,170,0)",
@@ -317,7 +319,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                               />
                             </motion.div>
                           ) : (
-                            <div className="w-12 h-12 rounded-full bg-gray-500/20 border-2 border-gray-400/30 flex items-center justify-center">
+                            <div className="w-11 h-11 rounded-full bg-gray-500/20 border-2 border-gray-400/30 flex items-center justify-center">
                               <span className="text-gray-400 font-bold text-sm">--</span>
                             </div>
                           )}
@@ -377,15 +379,15 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                 initial={{ x: -30, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.6 }}
-                className="bg-white/5 border border-white/20 rounded-2xl p-6 backdrop-blur-xl"
+                className="bg-white/5 border border-white/20 rounded-xl p-5 backdrop-blur-xl"
               >
-                <h3 className="text-white font-semibold mb-4 text-lg flex items-center">
-                  <Eye className="w-5 h-5 mr-2 text-[#00FFAA]" />
+                <h3 className="text-white font-semibold mb-4 text-base flex items-center">
+                  <Eye className="w-4 h-4 mr-2 text-[#00FFAA]" />
                   Enhanced Keywords
                 </h3>
                 <div className="space-y-3">
                   <div className="text-center">
-                    <div className="text-3xl font-bold text-[#00FFAA] mb-1">15+</div>
+                    <div className="text-3xl font-bold text-[#00FFAA] mb-2">15+</div>
                     <div className="text-gray-400 text-sm">Keywords Added</div>
                   </div>
                   <div className="text-xs text-gray-500 text-center">
@@ -399,20 +401,20 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                 initial={{ x: -30, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.7 }}
-                className="bg-white/5 border border-white/20 rounded-2xl p-6 backdrop-blur-xl"
+                className="bg-white/5 border border-white/20 rounded-xl p-5 backdrop-blur-xl"
               >
-                <h3 className="text-white font-semibold mb-4 text-lg flex items-center">
-                  <Crown className="w-5 h-5 mr-2 text-[#00FFAA]" />
+                <h3 className="text-white font-semibold mb-4 text-base flex items-center">
+                  <Crown className="w-4 h-4 mr-2 text-[#00FFAA]" />
                   Status
                 </h3>
                 <div className="text-center">
-                  <div className="inline-flex items-center space-x-2 bg-[#00FFAA]/10 border border-[#00FFAA]/30 rounded-full px-3 py-2">
+                  <div className="inline-flex items-center space-x-2 bg-[#00FFAA]/10 border border-[#00FFAA]/30 rounded-full px-4 py-2">
                     <div className="w-2 h-2 bg-[#00FFAA] rounded-full animate-pulse" />
                     <span className="text-[#00FFAA] font-medium text-sm">
                       {isTrialMode ? "Trial Complete" : "Optimized"}
                     </span>
                   </div>
-                  <p className="text-gray-400 text-xs mt-3">
+                  <p className="text-gray-400 text-sm mt-4">
                     {calculatedFinalScore && calculatedFinalScore >= 80 
                       ? "Excellent ATS compatibility" 
                       : calculatedFinalScore && calculatedFinalScore >= 60 
@@ -424,7 +426,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
               </motion.div>
             </div>
 
-            {/* Middle Column: Resume Content (2 columns width) */}
+            {/* Middle Column: Resume Content - Main Focus */}
             <div className="lg:col-span-2">
               <motion.div
                 initial={{ y: 30, opacity: 0 }}
@@ -433,36 +435,68 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                 className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-3xl overflow-hidden shadow-2xl h-full"
               >
                 <div className="p-6 border-b border-white/5">
-                  <h3 className="text-white font-semibold text-lg">Optimized Resume Content</h3>
-                  <p className="text-gray-400 text-sm mt-1">AI-enhanced with strategic keyword placement</p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-white font-semibold text-lg">
+                        {showPreview ? "Resume Preview" : "Optimized Resume Content"}
+                      </h3>
+                      <p className="text-gray-400 text-sm mt-1">
+                        {showPreview ? "How your resume will look when printed" : "AI-enhanced with strategic keyword placement"}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => setShowPreview(!showPreview)}
+                      variant="ghost"
+                      size="sm"
+                      className="text-white hover:bg-white/10 hover:text-white"
+                    >
+                      {showPreview ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+                      {showPreview ? "Show Markdown" : "Show Preview"}
+                    </Button>
+                  </div>
                 </div>
                 <div className="p-6">
-                  <div className="bg-black/20 rounded-2xl p-6 font-mono text-sm leading-relaxed text-gray-300 max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
-                    <pre className="whitespace-pre-wrap">{optimizedResume}</pre>
-                  </div>
+                  {showPreview ? (
+                    <div 
+                      className="bg-white rounded-xl p-4 max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+                      style={{ 
+                        fontFamily: 'Georgia, "Times New Roman", serif',
+                        fontSize: '10px',
+                        lineHeight: '1.2',
+                        color: '#111'
+                      }}
+                      dangerouslySetInnerHTML={{
+                        __html: renderMarkdownPreview(optimizedResume)
+                      }}
+                    />
+                  ) : (
+                    <div className="bg-black/20 rounded-2xl p-6 font-mono text-sm leading-relaxed text-gray-300 max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+                      <pre className="whitespace-pre-wrap">{optimizedResume}</pre>
+                    </div>
+                  )}
                 </div>
               </motion.div>
             </div>
 
             {/* Right Column: Actions & Export */}
-            <div className="lg:col-span-1 space-y-6">
+            <div className="lg:col-span-1 space-y-4">
               
               {/* Export Options Card */}
               <motion.div
                 initial={{ x: 30, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.6 }}
-                className="bg-white/5 border border-white/20 rounded-2xl p-6 backdrop-blur-xl"
+                className="bg-white/5 border border-white/20 rounded-xl p-5 backdrop-blur-xl"
               >
-                <h3 className="text-white font-semibold mb-4 text-lg flex items-center">
-                  <Download className="w-5 h-5 mr-2 text-[#00FFAA]" />
+                <h3 className="text-white font-semibold mb-4 text-base flex items-center">
+                  <Download className="w-4 h-4 mr-2 text-[#00FFAA]" />
                   Export Options
                 </h3>
                 <div className="space-y-3">
                   <Button
                     onClick={handleDownload}
                     disabled={isGeneratingPDF}
-                    className={`w-full font-semibold py-3 rounded-xl hover:scale-105 transition-all duration-300 ${
+                    className={`w-full font-semibold py-3 rounded-lg hover:scale-105 transition-all duration-300 ${
                       isTrialMode
                         ? "bg-gray-700 hover:bg-gray-600 text-gray-300 border border-gray-600"
                         : "bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black hover:shadow-[0_0_30px_rgba(0,255,170,0.3)] disabled:opacity-50 disabled:hover:scale-100"
@@ -487,7 +521,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                   
                   <Button
                     onClick={handleCopy}
-                    className={`w-full font-semibold py-3 rounded-xl hover:scale-105 transition-all duration-300 ${
+                    className={`w-full font-semibold py-3 rounded-lg hover:scale-105 transition-all duration-300 ${
                       isTrialMode
                         ? "bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-gray-300"
                         : "bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white hover:shadow-[0_0_30px_rgba(0,255,170,0.3)]"
@@ -532,16 +566,16 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                 initial={{ x: 30, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.7 }}
-                className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-2xl p-6 backdrop-blur-xl"
+                className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl p-5 backdrop-blur-xl"
               >
-                <h3 className="text-white font-semibold mb-4 text-lg flex items-center">
-                  <Info className="w-5 h-5 mr-2 text-blue-400" />
+                <h3 className="text-white font-semibold mb-4 text-base flex items-center">
+                  <Info className="w-4 h-4 mr-2 text-blue-400" />
                   Tips
                 </h3>
                 <div className="space-y-3 text-sm text-gray-300">
                   <div className="flex items-start space-x-2">
                     <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0" />
-                    <p>Proofread this or put into ChatGPT before applying with it</p>
+                    <p>Proofread this or put into ChatGPT before applying</p>
                   </div>
                   <div className="flex items-start space-x-2">
                     <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0" />

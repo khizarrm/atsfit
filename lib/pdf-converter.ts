@@ -11,6 +11,9 @@ import {
   ResumeStyles
 } from './types/pdf'
 import { generateResumeCSS, generateATSFriendlyCSS, DEFAULT_RESUME_STYLES, ATS_FRIENDLY_STYLES } from './styles/resume-styles'
+import { renderMarkdownPreview, PREVIEW_CONTAINER_STYLES } from './utils/preview-renderer'
+import { parsePreviewHTML, extractFontFamily } from './utils/html-parser'
+import { StyledPDFRenderer } from './utils/styled-pdf-renderer'
 import {
   validateMarkdownInput,
   validateFilename,
@@ -68,19 +71,25 @@ class PDFConverter {
       
       this.checkAborted()
 
-      // Try ATS-friendly method first, fallback to canvas, then direct
+      // Try preview-styled method first (matches preview exactly), then fallback to other methods
       let result: PDFGenerationResult
       
       try {
-        // Try ATS-friendly text-based method first
-        result = await this.generateATSFriendly(markdownContent, filename, options)
-      } catch (atsError) {
-        console.warn('ATS method failed, trying canvas method:', atsError)
+        // Try enhanced text-based method first (ATS-friendly, matches preview)
+        result = await this.generateTextBasedPreview(markdownContent, filename, options)
+      } catch (previewError) {
+        console.warn('Text-based preview method failed, trying canvas method:', previewError)
         try {
+          // Try canvas method with default styling
           result = await this.generateWithCanvas(markdownContent, filename, options)
         } catch (canvasError) {
-          console.warn('Canvas method failed, trying direct method:', canvasError)
-          result = await this.generateWithDirect(markdownContent, filename, options)
+          console.warn('Canvas method failed, trying ATS method:', canvasError)
+          try {
+            result = await this.generateATSFriendly(markdownContent, filename, options)
+          } catch (atsError) {
+            console.warn('ATS method failed, trying direct method:', atsError)
+            result = await this.generateWithDirect(markdownContent, filename, options)
+          }
         }
       }
 
@@ -290,6 +299,81 @@ class PDFConverter {
     pdf.save(filename)
   }
 
+  private async generateTextBasedPreview(
+    markdownContent: string,
+    filename: string,
+    options: PDFGenerationOptions
+  ): Promise<PDFGenerationResult> {
+    try {
+      this.updateProgress({
+        stage: 'converting',
+        progress: 10,
+        message: 'Converting markdown to structured content...'
+      })
+
+      // Convert markdown using same renderer as preview
+      const htmlContent = renderMarkdownPreview(markdownContent)
+      
+      this.checkAborted()
+
+      this.updateProgress({
+        stage: 'styling',
+        progress: 30,
+        message: 'Parsing HTML structure and styles...'
+      })
+
+      // Parse HTML to extract structured content with styling
+      const parsedDoc = parsePreviewHTML(htmlContent)
+      const fontFamily = extractFontFamily(htmlContent)
+      
+      this.checkAborted()
+
+      this.updateProgress({
+        stage: 'generating',
+        progress: 60,
+        message: 'Generating text-based PDF...'
+      })
+
+      // Create PDF with extracted styling
+      const pdfRenderer = new StyledPDFRenderer({
+        format: options.format || 'letter',
+        orientation: options.orientation || 'portrait',
+        margins: {
+          top: 30, // Smaller margins to match preview
+          right: 30,
+          bottom: 30,
+          left: 30
+        },
+        fontFamily
+      })
+
+      // Render document
+      await pdfRenderer.renderDocument(parsedDoc)
+      
+      this.checkAborted()
+
+      this.updateProgress({
+        stage: 'complete',
+        progress: 90,
+        message: 'Saving PDF...'
+      })
+
+      // Save the PDF
+      pdfRenderer.save(filename)
+
+      return {
+        success: true,
+        method: 'text-based-preview',
+        filename,
+        size: parsedDoc.elements.length * 50 // Approximate size
+      }
+
+    } catch (error) {
+      throw createErrorWithContext(error, 'PDF_GENERATION_ERROR', 'text-based-preview', 'Text-based preview PDF generation failed')
+    }
+  }
+
+
   private async generateWithCanvas(
     markdownContent: string,
     filename: string,
@@ -373,7 +457,7 @@ class PDFConverter {
       foreignObjectRendering: false,
       imageTimeout: 5000,
       logging: false,
-      onclone: (clonedDoc, element) => {
+      onclone: (_clonedDoc, element) => {
         if (element) {
           element.style.position = 'static'
           element.style.visibility = 'visible'
@@ -400,7 +484,7 @@ class PDFConverter {
     filename: string,
     options: PDFGenerationOptions
   ): Promise<void> {
-    const { imgWidth, imgHeight, pageHeight, pagesNeeded } = calculatePDFDimensions(canvas)
+    const { imgWidth, imgHeight, pageHeight } = calculatePDFDimensions(canvas)
     
     const pdf = new jsPDF({
       orientation: options.orientation || 'portrait',
@@ -501,11 +585,11 @@ class PDFConverter {
   }
 }
 
-// Legacy function for backward compatibility
-async function convertMarkdownToPDFDirect(markdownContent: string, filename: string): Promise<void> {
-  const converter = new PDFConverter()
-  await converter.generatePDF(markdownContent, { filename })
-}
+// Legacy function for backward compatibility (kept for potential future use)
+// async function convertMarkdownToPDFDirect(markdownContent: string, filename: string): Promise<void> {
+//   const converter = new PDFConverter()
+//   await converter.generatePDF(markdownContent, { filename })
+// }
 
 export async function convertMarkdownToPDF(
   markdownContent: string,

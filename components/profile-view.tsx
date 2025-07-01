@@ -11,6 +11,7 @@ import { getUserResume, saveUserResume, validateResumeContent } from "@/lib/data
 import { SharedHeader } from "@/components/shared-header"
 import { convertMarkdownToPDF, PDFGenerationResult } from "@/lib/pdf-converter"
 import { PDFGenerationProgress } from "@/lib/types/pdf"
+import { renderMarkdownPreview } from "@/lib/utils/preview-renderer"
 
 interface User {
   id: string
@@ -26,7 +27,7 @@ interface ProfileViewProps {
 export function ProfileView({ onBack, user }: ProfileViewProps) {
   const { refreshResume } = useAuth()
   const [resumeContent, setResumeContent] = useState("")
-  const [showPreview, setShowPreview] = useState(false)
+  const [showPreview, setShowPreview] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -464,60 +465,4 @@ phone • email • website • github
       </div>
     </motion.div>
   )
-}
-
-// Simple markdown to HTML converter for preview
-function renderMarkdownPreview(markdown: string): string {
-  if (!markdown) return '<p class="text-gray-400">Start typing to see preview...</p>'
-  
-  const lines = markdown.split('\n')
-  let isFirstContactLine = false
-  
-  return lines
-    .map((line, index) => {
-      // Headers
-      if (line.startsWith('# ')) {
-        isFirstContactLine = true // Next non-empty line should be contact info
-        return `<h1 style="font-size: 1.4em; text-transform: uppercase; text-align: center; letter-spacing: 0.02em; border-bottom: 1px solid #999; padding-bottom: 0.05rem; margin-bottom: 0.05rem; font-weight: 700; color: #111;">${line.slice(2)}</h1>`
-      }
-      
-      // Contact info line (first line after name that contains contact details)
-      if (isFirstContactLine && line.trim() && (line.includes('•') || line.includes('@') || line.includes('github'))) {
-        isFirstContactLine = false
-        return `<p style="text-align: center; margin-bottom: 0.1rem; font-size: 0.85em; color: #333; line-height: 1.2;">${line}</p>`
-      }
-      
-      if (line.startsWith('### ')) {
-        return `<h3 style="font-size: 0.95em; color: #222; margin-top: 0.3rem; margin-bottom: 0.1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em;">${line.slice(4)}</h3>`
-      }
-      if (line.startsWith('#### ')) {
-        return `<h4 style="font-size: 0.85em; font-weight: 600; color: #333; margin-bottom: 0.05rem; margin-top: 0.1rem;">${line.slice(5)}</h4>`
-      }
-      
-      // Horizontal rule
-      if (line.trim() === '---') {
-        return '<hr style="border: none; border-top: 1px solid #ccc; margin: 0.5rem 0 0.2rem; clear: both;" />'
-      }
-      
-      // Bullets
-      if (line.startsWith('- ')) {
-        return `<ul style="margin: 0 0 0.05rem 0; padding-left: 0.7rem;"><li style="margin-bottom: 0.02rem; line-height: 1.1; font-size: 0.85em;">${line.slice(2)}</li></ul>`
-      }
-      
-      // Bold and italic - ensure ** bold works properly
-      line = line.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight: 700; color: #111;">$1</strong>')
-      line = line.replace(/\*(.*?)\*/g, '<em style="font-style: italic; color: #333;">$1</em>')
-      
-      // Links
-      line = line.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" style="color: #111; text-decoration: underline;">$1</a>')
-      
-      // Empty lines
-      if (line.trim() === '') {
-        return '<div style="margin: 0.05rem 0;"></div>'
-      }
-      
-      // Regular paragraphs - make more compact
-      return `<p style="margin-bottom: 0.05rem; line-height: 1.2; font-size: 0.85em; color: #333;">${line}</p>`
-    })
-    .join('')
 }

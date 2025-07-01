@@ -12,12 +12,12 @@ export interface PDFGenerationOptions {
 }
 
 export interface PDFGenerationProgress {
-  stage: 'converting' | 'rendering' | 'generating' | 'complete'
+  stage: 'converting' | 'styling' | 'rendering' | 'generating' | 'complete'
   progress: number
   message: string
 }
 
-export type PDFGenerationMethod = 'canvas' | 'direct' | 'ats-friendly'
+export type PDFGenerationMethod = 'canvas' | 'direct' | 'ats-friendly' | 'preview-styled' | 'text-based-preview'
 
 export interface PDFGenerationResult {
   success: boolean
