@@ -9,8 +9,7 @@ import { Resume } from "@/lib/database/resume-operations"
 import { useAuth } from "@/contexts/auth-context"
 import { getUserResume, saveUserResume, validateResumeContent } from "@/lib/database/resume-operations"
 import { SharedHeader } from "@/components/shared-header"
-import { convertMarkdownToPDF, PDFGenerationResult } from "@/lib/pdf-converter"
-import { PDFGenerationProgress } from "@/lib/types/pdf"
+import { generatePDF } from "@/lib/api"
 import { renderMarkdownPreview } from "@/lib/utils/preview-renderer"
 
 interface User {
@@ -34,16 +33,33 @@ export function ProfileView({ onBack, user }: ProfileViewProps) {
   const [hasChanges, setHasChanges] = useState(false)
   const [originalContent, setOriginalContent] = useState("")
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
-  const [pdfProgress, setPdfProgress] = useState<PDFGenerationProgress | null>(null)
   const [pdfError, setPdfError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+
+  const chatGPTPrompt = `Convert the following resume text exactly as written into Markdown format.
+
+Instructions:
+
+Do not rephrase, rewrite, or edit any content.
+
+Use # (H1) only for my name at the top.
+
+Use ### (H3) for section headings (like EXPERIENCE, EDUCATION, SKILLS, PROJECTS).
+
+Use #### (H4) for company or project titles.
+
+Keep bullet points, line breaks, and formatting exactly as in my input.
+
+Output it as plain text so I can easily copy and paste it.
+
+Your only task is to strictly convert my resume to Markdown, preserving all content exactly.`
 
   // Load user's existing resume
   useEffect(() => {
     if (user) {
       loadUserResume()
     }
-  }, [user])
+  }, [])
 
   const loadUserResume = async () => {
     try {
@@ -136,7 +152,7 @@ phone • email • website • github
     try {
       setIsSaving(true)
       
-      const result = await saveUserResume(user.id, resumeContent, false)
+      const result = await saveUserResume(user.id, resumeContent)
       console.log('saveUserResume result:', result)
 
       if (result.success) {
@@ -172,24 +188,17 @@ phone • email • website • github
     try {
       setIsGeneratingPDF(true)
       setPdfError(null)
-      setPdfProgress(null)
       
-      const progressCallback = (progress: PDFGenerationProgress) => {
-        setPdfProgress(progress)
-      }
-      
-      const result: PDFGenerationResult = await convertMarkdownToPDF(
-        resumeContent,
-        'resume.pdf',
-        { format: 'letter', quality: 0.95 },
-        progressCallback
-      )
+      const result = await generatePDF(resumeContent, {
+        format: 'letter',
+        filename: 'resume.pdf'
+      })
       
       if (!result.success) {
-        throw result.error || new Error('PDF generation failed')
+        throw new Error(result.error || 'PDF generation failed')
       }
       
-      console.log(`PDF generated successfully using ${result.method} method`)
+      console.log('PDF generated successfully')
       
     } catch (error) {
       console.error('PDF generation failed:', error)
@@ -213,10 +222,89 @@ phone • email • website • github
       setIsGeneratingPDF(false)
       // Clear progress after a short delay
       setTimeout(() => {
-        setPdfProgress(null)
         setPdfError(null)
       }, 3000)
     }
+  }
+
+  const handleCopyPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(chatGPTPrompt)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (error) {
+      console.error("Failed to copy prompt:", error)
+    }
+  }
+
+  const handleOpenFullA4 = () => {
+    if (!resumeContent.trim()) {
+      showMessage('error', 'No resume content to preview')
+      return
+    }
+    
+    const html = renderMarkdownPreview(resumeContent)
+    const css = `
+      body {
+        font-family: 'Georgia, "Times New Roman", serif';
+        font-size: 14px;
+        line-height: 1.2;
+        color: #111;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 40px;
+        display: flex;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      
+      .resume-container {
+        background: white;
+        width: 8.5in;
+        min-height: 11in;
+        padding: 0.5in;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        border-radius: 8px;
+      }
+      
+      h1 { font-size: 1.8em; text-align: center; margin-bottom: 0.1rem; font-weight: 700; color: #111; }
+      h3 { font-size: 1.2em; color: #222; margin-top: 0.25rem; margin-bottom: 0.1rem; font-weight: 600; border-bottom: 1px solid #888; padding-bottom: 0.05rem; }
+      h4 { font-size: 1.1em; font-weight: 400; color: #333; margin-bottom: 0.05rem; margin-top: 0.08rem; }
+      p { margin: 0 0 0.01rem 0; line-height: 1.2; font-size: 1em; color: #333; }
+      h1 + p { text-align: center; margin-bottom: 0.15rem; font-size: 1em; color: #333; line-height: 1.3; }
+      .bullet-point { margin: 0 0 0.01rem 1.2rem; position: relative; }
+      .bullet-point::before { content: "\u2022"; position: absolute; left: -1rem; color: #111; font-weight: bold; }
+      .bullet-content { line-height: 1.3; font-size: 1em; color: #333; }
+      hr { border: none; border-top: 1px solid #ccc; margin: 0.2rem 0; clear: both; }
+      strong { font-weight: 700; color: #111; }
+      em { font-style: italic; color: #333; }
+      u { text-decoration: underline; color: #333; }
+      a { color: #111; text-decoration: underline; }
+    `
+    
+    const fullHTML = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Resume - Full A4 View</title>
+        <style>${css}</style>
+      </head>
+      <body>
+        <div class="resume-container">
+          ${html}
+        </div>
+      </body>
+      </html>
+    `
+    
+    const blob = new Blob([fullHTML], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank')
+    
+    // Clean up the URL after a short delay
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
   const handleCopy = async () => {
@@ -297,6 +385,15 @@ phone • email • website • github
                 {showPreview ? <EyeOff className="mr-2 h-3 w-3" /> : <Eye className="mr-2 h-3 w-3" />}
                 {showPreview ? "Hide Preview" : "Show Preview"}
               </Button>
+              <Button
+                onClick={handleOpenFullA4}
+                variant="outline"
+                size="sm"
+                className="bg-black/40 backdrop-blur-md border-[#00FFAA]/50 text-[#00FFAA] hover:bg-[#00FFAA]/20 hover:border-[#00FFAA] hover:shadow-[0_0_10px_rgba(0,255,170,0.3)] transition-all duration-300"
+              >
+                <Eye className="mr-2 h-3 w-3" />
+                Full A4 View
+              </Button>
             </div>
           </div>
 
@@ -319,6 +416,7 @@ phone • email • website • github
               <span className="text-sm">{message.text}</span>
             </motion.div>
           )}
+
 
           {/* Editor Layout */}
           <div className={`grid gap-6 ${showPreview ? 'grid-cols-2' : 'grid-cols-1'}`}>
@@ -424,18 +522,18 @@ phone • email • website • github
                   </div>
                   
                   {/* Progress indicator */}
-                  {isGeneratingPDF && pdfProgress && (
+                  {isGeneratingPDF && (
                     <div className="mt-3">
                       <div className="bg-white/10 rounded-full h-1 overflow-hidden">
                         <motion.div
                           className="h-full bg-gradient-to-r from-[#00FFAA] to-[#00DD99]"
                           initial={{ width: 0 }}
-                          animate={{ width: `${pdfProgress.progress}%` }}
-                          transition={{ duration: 0.3 }}
+                          animate={{ width: "100%" }}
+                          transition={{ duration: 2, repeat: Infinity }}
                         />
                       </div>
                       <p className="text-xs text-gray-400 mt-1">
-                        {pdfProgress.message} ({Math.round(pdfProgress.progress)}%)
+                        Generating PDF...
                       </p>
                     </div>
                   )}
@@ -454,10 +552,10 @@ phone • email • website • github
                 
                 <div className="p-4">
                   <div 
-                    className="bg-white rounded-xl p-3 min-h-[500px] overflow-auto"
+                    className="bg-white rounded-xl p-4 min-h-[500px] overflow-auto"
                     style={{ 
                       fontFamily: 'Georgia, "Times New Roman", serif',
-                      fontSize: '10px',
+                      fontSize: '14px',
                       lineHeight: '1.2',
                       color: '#111'
                     }}
@@ -469,6 +567,57 @@ phone • email • website • github
               </motion.div>
             )}
           </div>
+
+          {/* ChatGPT Prompt Card */}
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-2xl p-6 mt-6 shadow-2xl"
+          >
+            <div className="bg-white/5 border border-white/20 rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-[#00FFAA] to-[#00DD99] rounded-lg flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-black" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-semibold">ChatGPT Resume Prompt</h3>
+                    <p className="text-gray-400 text-sm">Copy this prompt and paste it into ChatGPT</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={handleCopyPrompt}
+                  size="sm"
+                  className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-semibold"
+                >
+                  <Copy className="mr-2 h-4 w-4" />
+                  {copied ? "Copied!" : "Copy Prompt"}
+                </Button>
+              </div>
+              
+              <div className="bg-black/20 border border-white/10 rounded-lg p-4 font-mono text-sm text-gray-300 max-h-48 overflow-y-auto">
+                <pre className="whitespace-pre-wrap">{chatGPTPrompt}</pre>
+              </div>
+              
+              <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-blue-400 text-xs font-bold">!</span>
+                  </div>
+                  <div>
+                    <h4 className="text-blue-400 font-medium text-sm mb-1">How to use:</h4>
+                    <ol className="text-gray-400 text-sm space-y-1">
+                      <li>1. Click "Copy Prompt" above</li>
+                      <li>2. Go to ChatGPT and paste the prompt</li>
+                      <li>3. Paste in your resume afterwards</li>
+                      <li>4. Place the output in the editor above</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
       </div>
     </motion.div>

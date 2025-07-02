@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useState, useEffect, useRef } from "react"
 import { Download, Copy, ArrowLeft, Eye, EyeOff, Crown, Lock, Sparkles, User, Info } from "lucide-react"
-import { convertMarkdownToPDF, PDFGenerationResult } from "@/lib/pdf-converter"
-import { PDFGenerationProgress } from "@/lib/types/pdf"
+import { usePDFGeneration } from "@/hooks/usePDFGeneration"
 import { SharedHeader } from "@/components/shared-header"
 import { renderMarkdownPreview } from "@/lib/utils/preview-renderer"
 
@@ -51,9 +50,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
   const [showPreview, setShowPreview] = useState(false)
   const [calculatedFinalScore, setCalculatedFinalScore] = useState<number | null>(finalAtsScore || null)
   const [isCalculatingFinalScore, setIsCalculatingFinalScore] = useState(false)
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
-  const [pdfProgress, setPdfProgress] = useState<PDFGenerationProgress | null>(null)
-  const [pdfError, setPdfError] = useState<string | null>(null)
+  const [pdfState, pdfActions] = usePDFGeneration()
   const hasCalculatedRef = useRef(false)
 
   // Use the final ATS score passed from the optimization process
@@ -82,35 +79,15 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
       return
     }
     
-    try {
-      setIsGeneratingPDF(true)
-      setPdfError(null)
-      setPdfProgress(null)
-      
-      const progressCallback = (progress: PDFGenerationProgress) => {
-        setPdfProgress(progress)
-      }
-      
-      // Use the proper PDF converter that creates text-based PDFs
-      const result: PDFGenerationResult = await convertMarkdownToPDF(
-        optimizedResume,
-        'optimized-resume.pdf',
-        { format: 'letter', quality: 0.95 },
-        progressCallback
-      )
-      
-      if (!result.success) {
-        throw result.error || new Error('PDF generation failed')
-      }
-      
-      console.log('PDF generated successfully using preview-exact method')
-      
-    } catch (error) {
-      console.error('PDF generation failed:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      setPdfError(errorMessage)
-      
-      // Fallback to markdown download
+    // Use the API-based PDF generation
+    const success = await pdfActions.generatePDF(optimizedResume, {
+      format: 'letter',
+      filename: 'optimized-resume.pdf'
+    })
+
+    // If PDF generation fails, fallback to markdown download
+    if (!success && pdfState.error) {
+      console.log('PDF generation failed, falling back to markdown download')
       setTimeout(() => {
         const blob = new Blob([optimizedResume], { type: "text/plain" })
         const url = URL.createObjectURL(blob)
@@ -122,14 +99,6 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
         document.body.removeChild(a)
         URL.revokeObjectURL(url)
       }, 2000) // Give user time to see error
-      
-    } finally {
-      setIsGeneratingPDF(false)
-      // Clear progress after a short delay
-      setTimeout(() => {
-        setPdfProgress(null)
-        setPdfError(null)
-      }, 3000)
     }
   }
 
@@ -501,14 +470,14 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                 <div className="space-y-3">
                   <Button
                     onClick={handleDownload}
-                    disabled={isGeneratingPDF}
+                    disabled={pdfState.isGenerating}
                     className={`w-full font-semibold py-3 rounded-lg hover:scale-105 transition-all duration-300 ${
                       isTrialMode
                         ? "bg-gray-700 hover:bg-gray-600 text-gray-300 border border-gray-600"
                         : "bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black hover:shadow-[0_0_30px_rgba(0,255,170,0.3)] disabled:opacity-50 disabled:hover:scale-100"
                     }`}
                   >
-                    {isGeneratingPDF ? (
+                    {pdfState.isGenerating ? (
                       <>
                         <motion.div
                           animate={{ rotate: 360 }}
@@ -538,30 +507,30 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                   </Button>
                   
                   {/* Progress indicator */}
-                  {isGeneratingPDF && pdfProgress && (
+                  {pdfState.isGenerating && pdfState.progress > 0 && (
                     <div className="mt-4">
                       <div className="bg-white/10 rounded-full h-2 overflow-hidden">
                         <motion.div
                           className="h-full bg-gradient-to-r from-[#00FFAA] to-[#00DD99]"
                           initial={{ width: 0 }}
-                          animate={{ width: `${pdfProgress.progress}%` }}
+                          animate={{ width: `${pdfState.progress}%` }}
                           transition={{ duration: 0.3 }}
                         />
                       </div>
                       <p className="text-xs text-gray-400 mt-1 text-center">
-                        {pdfProgress.message} ({Math.round(pdfProgress.progress)}%)
+                        {pdfState.stage} ({Math.round(pdfState.progress)}%)
                       </p>
                     </div>
                   )}
                   
                   {/* Error message */}
-                  {pdfError && (
+                  {pdfState.error && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="text-xs text-red-400 text-center"
                     >
-                      PDF failed: {pdfError}. Downloading markdown instead...
+                      PDF failed: {pdfState.error}. Downloading markdown instead...
                     </motion.div>
                   )}
                 </div>

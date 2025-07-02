@@ -72,7 +72,7 @@ Your only task is to strictly convert my resume to Markdown, preserving all cont
       setIsSaving(true)
       setError("")
 
-      const result = await saveUserResume(user.id, resumeContent, true) // true = new user
+      const result = await saveUserResume(user.id, resumeContent)
       
       if (result.success) {
         // Refresh the resume in auth context
@@ -182,8 +182,8 @@ Your only task is to strictly convert my resume to Markdown, preserving all cont
                     <ol className="text-gray-400 text-sm space-y-1">
                       <li>1. Click "Copy Prompt" above</li>
                       <li>2. Go to ChatGPT and paste the prompt</li>
-                      <li>3. Customize the [YOUR FIELD/ROLE] part for your industry</li>
-                      <li>4. Copy ChatGPT's markdown response and paste it below</li>
+                      <li>3. Paste in your resume afterwards</li>
+                      <li>4. Place the output below</li>
                     </ol>
                   </div>
                 </div>

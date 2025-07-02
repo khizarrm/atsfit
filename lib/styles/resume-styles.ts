@@ -2,8 +2,8 @@ import { ResumeStyles } from '../types/pdf'
 
 export const DEFAULT_RESUME_STYLES: ResumeStyles = {
   fontFamily: 'Georgia, "Helvetica Neue", Helvetica, Arial, sans-serif',
-  fontSize: '10px',
-  lineHeight: '1.0',
+  fontSize: '14px',
+  lineHeight: '1.4',
   colors: {
     primary: '#222',
     secondary: '#333',
@@ -12,9 +12,9 @@ export const DEFAULT_RESUME_STYLES: ResumeStyles = {
     background: '#fff'
   },
   spacing: {
-    margin: '0.2in',
-    padding: '0.1rem',
-    sectionGap: '0.1rem'
+    margin: '0.5in',
+    padding: '0.2rem',
+    sectionGap: '0.4rem'
   }
 }
 
@@ -43,43 +43,47 @@ export function generateResumeCSS(styles: ResumeStyles = DEFAULT_RESUME_STYLES):
 }
 
 .pdf-content h1 {
-  font-size: 1.0em;
+  font-size: 1.8em;
   text-align: center;
-  margin-bottom: 0.08rem;
+  margin-bottom: 0.3rem;
   font-weight: bold;
 }
 
 .pdf-content h2 {
-  font-size: 1.1em;
+  font-size: 1.4em;
   color: ${styles.colors.secondary};
   margin-top: ${styles.spacing.sectionGap};
-  margin-bottom: 0.08rem;
+  margin-bottom: 0.2rem;
   font-weight: bold;
 }
 
 .pdf-content h3 {
-  font-size: 1.05em;
+  font-size: 1.2em;
   font-weight: 600;
   color: ${styles.colors.secondary};
-  margin-bottom: 0.04rem;
+  margin-bottom: 0.15rem;
+  border-bottom: 1px solid ${styles.colors.border};
+  padding-bottom: 0.1rem;
 }
 
 .pdf-content h4 {
-  font-size: 0.95em;
+  font-size: 1.1em;
   font-weight: 500;
   color: ${styles.colors.secondary};
-  margin-bottom: 0.04rem;
+  margin-bottom: 0.1rem;
 }
 
 /* ========== Contact Line (Pure Markdown) ========== */
 .pdf-content h1 + p {
   text-align: center;
-  font-size: 10px;
+  font-size: 1em;
   font-weight: 400;
-  margin: 0.1rem 0 ${styles.spacing.sectionGap};
+  margin: 0.1rem 0 0.2rem 0;
   color: ${styles.colors.primary};
-  line-height: 1.2;
+  line-height: 1.3;
   letter-spacing: 0.02em;
+  border-bottom: 1px solid ${styles.colors.border};
+  padding-bottom: 0.3rem;
 }
 
 .pdf-content h1 + p a {
@@ -94,34 +98,32 @@ export function generateResumeCSS(styles: ResumeStyles = DEFAULT_RESUME_STYLES):
 
 /* ========== Paragraphs & Lists ========== */
 .pdf-content p, .pdf-content ul, .pdf-content ol {
-  margin: 0 0 0.05rem 0;
+  margin: 0 0 0.2rem 0;
   orphans: 3;
   widows: 3;
 }
 
 .pdf-content ul, .pdf-content ol {
-  padding-left: 0.7rem;
+  padding-left: 1.2rem;
+  margin-bottom: 0.1rem;
 }
 
 .pdf-content li {
-  margin-bottom: 0.03rem;
+  margin-bottom: 0.1rem;
   page-break-inside: avoid;
-  line-height: 1.2;
+  line-height: 1.4;
 }
 
 .pdf-content ul li::marker {
   content: "• ";
-  font-weight: normal;
-  color: #555;
-  font-size: 0.8em;
+  font-weight: bold;
+  color: ${styles.colors.primary};
+  font-size: 1em;
 }
 
 /* ========== Horizontal Rules ========== */
 .pdf-content hr {
-  border: none;
-  border-top: 1px solid #ddd;
-  margin: 0.6rem 0;
-  clear: both;
+  display: none;
 }
 
 /* ========== Bold and Italic ========== */
@@ -174,31 +176,10 @@ export function generateResumeCSS(styles: ResumeStyles = DEFAULT_RESUME_STYLES):
 `
 }
 
-export const COMPACT_RESUME_STYLES: ResumeStyles = {
-  ...DEFAULT_RESUME_STYLES,
-  fontSize: '12px',
-  spacing: {
-    margin: '0.75in',
-    padding: '0.25rem',
-    sectionGap: '0.75rem'
-  }
-}
-
-export const MODERN_RESUME_STYLES: ResumeStyles = {
-  ...DEFAULT_RESUME_STYLES,
-  fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
-  colors: {
-    ...DEFAULT_RESUME_STYLES.colors,
-    primary: '#2c3e50',
-    secondary: '#34495e',
-    border: '#3498db'
-  }
-}
-
 export const ATS_FRIENDLY_STYLES: ResumeStyles = {
   fontFamily: 'Arial, sans-serif',
-  fontSize: '11px',
-  lineHeight: '1.2',
+  fontSize: '13px',
+  lineHeight: '1.3',
   colors: {
     primary: '#000000',
     secondary: '#000000',
@@ -208,25 +189,7 @@ export const ATS_FRIENDLY_STYLES: ResumeStyles = {
   },
   spacing: {
     margin: '0.5in',
-    padding: '0.1rem',
-    sectionGap: '0.2rem'
-  }
-}
-
-export const ULTRA_COMPACT_STYLES: ResumeStyles = {
-  fontFamily: 'Georgia, "Times New Roman", serif',
-  fontSize: '10px',
-  lineHeight: '1.2',
-  colors: {
-    primary: '#111',
-    secondary: '#222',
-    text: '#333',
-    border: '#ccc',
-    background: '#fff'
-  },
-  spacing: {
-    margin: '0.4in',
-    padding: '0.05rem',
+    padding: '0.15rem',
     sectionGap: '0.3rem'
   }
 }
@@ -245,40 +208,55 @@ export function generateATSFriendlyCSS(styles: ResumeStyles = ATS_FRIENDLY_STYLE
 }
 
 .pdf-content h1 {
-  font-size: 1.3em;
+  font-size: 1.6em;
   text-align: center;
-  margin: 0 0 0.2rem 0;
+  margin: 0 0 0.3rem 0;
   font-weight: bold;
   color: ${styles.colors.primary};
 }
 
 .pdf-content h2 {
-  font-size: 1.1em;
-  margin: 0.3rem 0 0.1rem 0;
+  font-size: 1.2em;
+  margin: 0.4rem 0 0.15rem 0;
   font-weight: bold;
   color: ${styles.colors.primary};
 }
 
 .pdf-content h3 {
+  font-size: 1.1em;
+  margin: 0.3rem 0 0.1rem 0;
+  font-weight: bold;
+  color: ${styles.colors.primary};
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 0.05rem;
+}
+
+.pdf-content h4 {
   font-size: 1em;
-  margin: 0.2rem 0 0.05rem 0;
+  margin: 0.2rem 0 0.1rem 0;
   font-weight: bold;
   color: ${styles.colors.primary};
 }
 
 .pdf-content p {
-  margin: 0 0 0.1rem 0;
+  margin: 0 0 0.15rem 0;
   line-height: ${styles.lineHeight};
 }
 
 .pdf-content ul, .pdf-content ol {
-  margin: 0 0 0.1rem 0;
-  padding-left: 1rem;
+  margin: 0 0 0.15rem 0;
+  padding-left: 1.2rem;
 }
 
 .pdf-content li {
-  margin-bottom: 0.05rem;
+  margin-bottom: 0.08rem;
   line-height: ${styles.lineHeight};
+}
+
+.pdf-content ul li::marker {
+  content: "• ";
+  font-weight: bold;
+  color: ${styles.colors.primary};
 }
 
 .pdf-content strong, .pdf-content b {
@@ -298,19 +276,20 @@ export function generateATSFriendlyCSS(styles: ResumeStyles = ATS_FRIENDLY_STYLE
 .pdf-content h1 + p {
   text-align: center;
   font-size: ${styles.fontSize};
-  margin: 0.1rem 0 0.3rem 0;
+  margin: 0.1rem 0 0.2rem 0;
   font-weight: normal;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 0.2rem;
 }
 
-/* Remove all decorative elements */
+/* Remove all decorative elements except section dividers */
 .pdf-content hr {
   display: none;
 }
 
-/* Remove background colors and borders */
+/* Remove background colors and borders except section dividers */
 .pdf-content * {
   background: transparent !important;
-  border: none !important;
   box-shadow: none !important;
 }
 `

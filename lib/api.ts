@@ -1,4 +1,5 @@
 import { HOST_URL } from './variables';
+import { renderMarkdownPreview, generatePDFCSS } from '@/lib/utils/preview-renderer';
 
 export async function annotateResume(keywords: string[], jobDescription: string, userNotes: string, abortSignal?: AbortSignal) {
   const res = await fetch(`${HOST_URL}/api/annotate`, {
@@ -164,4 +165,102 @@ export async function fetchAtsScore(abortSignal?: AbortSignal, resumeType: 'old'
   console.log("ATS Score Analysis:", data);
   
   return data;
+}
+
+export interface PDFGenerationOptions {
+  format?: 'A4' | 'letter';
+  filename?: string;
+}
+
+export async function generatePDF(
+  markdownContent: string,
+  options: PDFGenerationOptions = {},
+  abortSignal?: AbortSignal
+): Promise<{ success: boolean; error?: string; filename?: string }> {
+  const { format = 'letter', filename = 'resume.pdf' } = options;
+
+  try {
+    // Generate HTML and CSS that matches the preview exactly
+    const html = renderMarkdownPreview(markdownContent);
+    const css = generatePDFCSS();
+
+    const requestPayload = {
+      html,
+      css,
+      options: {
+        format,
+        margin: {
+          top: '0.5in',
+          right: '0.5in',
+          bottom: '0.5in',
+          left: '0.5in'
+        },
+        printBackground: true,
+        filename
+      }
+    };
+
+    const res = await fetch(`${HOST_URL}/api/generate-pdf`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestPayload),
+      signal: abortSignal,
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({ error: 'Network error' }));
+      throw new Error(errorData.detail || errorData.error || `HTTP ${res.status}: ${res.statusText}`);
+    }
+
+    const result = await res.json();
+
+    if (!result.success) {
+      throw new Error(result.error || 'PDF generation failed');
+    }
+
+    if (!result.data) {
+      throw new Error('No PDF data received from server');
+    }
+
+    // Convert base64 to blob and download
+    const byteCharacters = atob(result.data);
+    const byteNumbers = new Array(byteCharacters.length);
+    
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    
+    const byteArray = new Uint8Array(byteNumbers);
+    const pdfBlob = new Blob([byteArray], { type: 'application/pdf' });
+    
+    // Download the file
+    const url = URL.createObjectURL(pdfBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    console.log('PDF generated successfully:', {
+      size: result.metadata?.size,
+      pages: result.metadata?.pages,
+      generationTime: result.metadata?.generationTime,
+      cached: result.metadata?.cached
+    });
+
+    return { success: true, filename };
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('PDF generation failed:', errorMessage);
+    
+    return { 
+      success: false, 
+      error: errorMessage 
+    };
+  }
 }

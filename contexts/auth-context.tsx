@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()
 
       if (error) {
         console.error('Error fetching resume:', error)
@@ -53,7 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
-        fetchUserResume(session.user.id).finally(() => setLoading(false))
+        // Add timeout to prevent hanging
+        Promise.race([
+          fetchUserResume(session.user.id),
+          new Promise(resolve => setTimeout(resolve, 5000)) // 5 second timeout
+        ]).finally(() => setLoading(false))
       } else {
         setResumeMd(null)
         setLoading(false)
@@ -70,7 +74,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
-        fetchUserResume(session.user.id).finally(() => setLoading(false))
+        // Add timeout to prevent hanging
+        Promise.race([
+          fetchUserResume(session.user.id),
+          new Promise(resolve => setTimeout(resolve, 5000)) // 5 second timeout
+        ]).finally(() => setLoading(false))
       } else {
         setResumeMd(null)
         setLoading(false)

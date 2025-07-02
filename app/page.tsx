@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 
 // Views
@@ -12,10 +12,7 @@ import { ResultsView } from "@/components/results-view"
 import { ProfileView } from "@/components/profile-view"
 import { ResumeSetupView } from "@/components/resume-setup-view"
 
-import { supabase } from "@/lib/supabase"
-import type { AuthChangeEvent } from "@supabase/supabase-js"
 import { useAuth } from "@/contexts/auth-context"
-import { getUserResume } from "@/lib/database/resume-operations"
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -98,7 +95,6 @@ function BackgroundGlow() {
 
 export default function ATSFitApp() {
   /* ------------------------------- State --------------------------------- */
-  const { loading: authLoading } = useAuth()
   const [currentState, setCurrentState] = useState<AppState>("login")
   const [user, setUser] = useState<User | null>(null)
   const [isTrialMode, setIsTrialMode] = useState(false)
@@ -112,77 +108,43 @@ export default function ATSFitApp() {
   const [missingKeywordsCount, setMissingKeywordsCount] = useState<number | undefined>()
   const [nextJobUrl, setNextJobUrl] = useState("")
 
-  // Avoid stale closures inside the auth listener
-  const currentStateRef = useRef(currentState)
-  currentStateRef.current = currentState
-
   /* ----------------------------- Lifecycle ------------------------------ */
-  // Restore last screen (except auth screens and setup) on refresh
-  useEffect(() => {
-    const savedState = localStorage.getItem("ATSFitAppState") as AppState | null
-    if (savedState && !["login", "tryit", "resume-setup"].includes(savedState)) {
-      setCurrentState(savedState)
-    }
-  }, [])
+  // No state restoration - always start fresh for predictable behavior
 
-  // Supabase auth listener
+  // Handle auth state changes using AuthContext data
+  const { user: authUser, loading: authLoading, hasResume } = useAuth()
+  
   useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session) => {
-      const prev = currentStateRef.current
-      console.log("Auth event", event, "state ref was", prev)
-
-      if (session?.user) {
-        // Logged in
+    if (!authLoading) {
+      if (authUser) {
+        // User is logged in - use AuthContext user data
         const userData = {
-          id: session.user.id,
-          email: session.user.email!,
-          name: session.user.user_metadata.full_name || session.user.email!,
+          id: authUser.id,
+          email: authUser.email!,
+          name: authUser.user_metadata?.full_name || authUser.email!,
         }
         setUser(userData)
         setIsTrialMode(false)
         
-        // For new signups, first-time login, or when coming from login/tryit, check if user has resume
-        if (prev === "login" || prev === "tryit" || event === "SIGNED_IN") {
-          try {
-            const resumeResult = await getUserResume(session.user.id)
-            console.log("Resume check result:", resumeResult)
-            
-            // If no resume exists or is empty, redirect to setup
-            if (!resumeResult.success || !resumeResult.data || !resumeResult.data.resume_md?.trim()) {
-              console.log("No resume found, redirecting to setup")
-              setCurrentState("resume-setup")
-            } else {
-              console.log("Resume found, going to dashboard")
-              setCurrentState("dashboard")
-            }
-          } catch (error) {
-            console.error("Error checking user resume:", error)
-            // If error checking resume, redirect to setup to be safe
-            setCurrentState("resume-setup")
-          }
+        // Check AuthContext for resume data to route appropriately
+        if (hasResume) {
+          console.log("Resume found, going to dashboard")
+          setCurrentState("dashboard")
         } else {
-          // For other states, preserve current state or go to dashboard
-          setCurrentState((state) => (state === "login" || state === "tryit" ? "dashboard" : state))
+          console.log("No resume found, redirecting to setup")
+          setCurrentState("resume-setup")
         }
       } else {
-        // Logged out
+        // User is logged out
         setUser(null)
-        if (!isTrialMode && !["results", "profile"].includes(prev) && event !== "TOKEN_REFRESHED") {
+        if (!isTrialMode) {
           setCurrentState("login")
         }
       }
-    })
-    return () => subscription.unsubscribe()
-  }, [isTrialMode])
-
-  // Persist navigation state (except auth screens and setup)
-  useEffect(() => {
-    if (!["login", "tryit", "resume-setup"].includes(currentState)) {
-      localStorage.setItem("ATSFitAppState", currentState)
     }
-  }, [currentState])
+  }, [authUser, authLoading, hasResume, isTrialMode])
+
+  // No state persistence - let users navigate naturally without memory
 
   /* ------------------------------ Handlers ------------------------------ */
   const goTo = useCallback((state: AppState) => setCurrentState(state), [])
