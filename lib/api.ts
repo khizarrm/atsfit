@@ -1,37 +1,5 @@
 import { HOST_URL } from './variables';
 
-export async function fetchJobResearch(jobUrl: string, resumeMd: string, abortSignal?: AbortSignal) {
-  const res = await fetch(`${HOST_URL}/research`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ url: jobUrl, resume_md: resumeMd }),
-    signal: abortSignal,
-  });
-
-  if (!res.ok) throw new Error("Failed to fetch research");
-
-  const data = await res.json();
-  
-  // Log the full response to understand the structure
-  console.log("Full API response:", data);
-  
-  // Handle different possible response structures
-  if (typeof data === 'string') {
-    return data;
-  } else if (data.summary) {
-    return data.summary;
-  } else if (data.raw) {
-    return data.raw;
-  } else if (data.json_dict) {
-    return JSON.stringify(data.json_dict, null, 2);
-  } else {
-    // Fallback: convert entire object to readable string
-    return JSON.stringify(data, null, 2);
-  }
-}
-
 export async function annotateResume(keywords: string[], jobDescription: string, userNotes: string, abortSignal?: AbortSignal) {
   const res = await fetch(`${HOST_URL}/api/annotate`, {
     method: "POST",

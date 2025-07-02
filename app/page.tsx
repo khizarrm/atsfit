@@ -103,6 +103,7 @@ export default function ATSFitApp() {
   const [optimizedResume, setOptimizedResume] = useState("")
   const [initialAtsScore, setInitialAtsScore] = useState<number | undefined>()
   const [finalAtsScore, setFinalAtsScore] = useState<number | undefined>()
+  const [missingKeywordsCount, setMissingKeywordsCount] = useState<number | undefined>()
   const [nextJobUrl, setNextJobUrl] = useState("")
 
   // Avoid stale closures inside the auth listener
@@ -180,11 +181,13 @@ export default function ATSFitApp() {
   const handleJobSubmit = useCallback((description: string) => setJobDescription(description), [])
 
   const handleAnalysisComplete = useCallback(
-    (result: string, initialScore?: number, finalScore?: number) => {
+    (result: string, initialScore?: number, finalScore?: number, missingKeywordsCount?: number) => {
       if (!result) return console.error("Empty result received")
+      console.log("Analysis Complete - Initial Score:", initialScore, "Final Score:", finalScore, "Missing Keywords:", missingKeywordsCount)
       setOptimizedResume(result)
       setInitialAtsScore(initialScore)
       setFinalAtsScore(finalScore)
+      setMissingKeywordsCount(missingKeywordsCount)
       setNextJobUrl("")
       goTo("results")
     },
@@ -250,6 +253,7 @@ export default function ATSFitApp() {
             user={user}
             initialAtsScore={initialAtsScore}
             finalAtsScore={finalAtsScore}
+            missingKeywordsCount={missingKeywordsCount}
           />
         )
       case "profile":

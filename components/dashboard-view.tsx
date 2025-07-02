@@ -5,15 +5,15 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useState, useEffect } from "react"
 import { Send, Info, Sparkles } from "lucide-react"
-import { annotateResume, rewriteResume, fetchAtsScore, AtsScoreResponse, extractKeywordsFromJobDescription } from "@/lib/api"
-import { calculateAtsScore } from "@/lib/utils/ats-scorer"
+import { annotateResume, rewriteResume, AtsScoreResponse, extractKeywordsFromJobDescription } from "@/lib/api"
+import { calculateAtsScore, AtsScoreResult } from "@/lib/utils/ats-scorer"
 import { useAuth } from "@/contexts/auth-context"
 import { LoadingProgress } from "@/components/LoadingProgress"
 import { SharedHeader } from "@/components/shared-header"
 
 interface DashboardViewProps {
   onJobSubmit: (description: string) => void
-  onAnalysisComplete: (result: string, initialAtsScore?: number, finalAtsScore?: number) => void
+  onAnalysisComplete: (result: string, initialAtsScore?: number, finalAtsScore?: number, missingKeywordsCount?: number) => void
   onSignUp: () => void
   onGoToProfile: () => void
   user: any | null
@@ -37,13 +37,20 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
   const [keywords, setKeywords] = useState<string[]>([])
   const [keywordsLoading, setKeywordsLoading] = useState(false)
   const [keywordsError, setKeywordsError] = useState("")
-  const [currentAtsScore, setCurrentAtsScore] = useState<number | null>(null)
+  const [currentAtsResult, setCurrentAtsResult] = useState<AtsScoreResult | null>(null)
   const [userNotes, setUserNotes] = useState("")
   const [editingKeywordIndex, setEditingKeywordIndex] = useState<number | null>(null)
   const [editingKeywordValue, setEditingKeywordValue] = useState("")
   const [storedInitialAtsScore, setStoredInitialAtsScore] = useState<number | null>(null)
+  const [progressInterval, setProgressInterval] = useState<NodeJS.Timeout | null>(null)
 
   const updateProgressSmooth = (targetProgress: number) => {
+    // Clear any existing progress animation
+    if (progressInterval) {
+      clearInterval(progressInterval)
+      setProgressInterval(null)
+    }
+    
     // Smooth animation to target progress
     const currentProgress = progress
     const steps = Math.abs(targetProgress - currentProgress)
@@ -57,10 +64,13 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
       if ((stepSize > 0 && newProgress >= targetProgress) || (stepSize < 0 && newProgress <= targetProgress)) {
         setProgress(targetProgress)
         clearInterval(interval)
+        setProgressInterval(null)
       } else {
         setProgress(newProgress)
       }
     }, 50) // Smooth 50ms intervals
+    
+    setProgressInterval(interval)
   }
 
   const handleSubmit = async () => {
@@ -82,21 +92,28 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
     
     try {
       // Store the initial ATS score for before/after comparison
-      const initialScore = currentAtsScore
+      const initialScore = currentAtsResult?.score || null
       setStoredInitialAtsScore(initialScore)
+      
+      // Capture missing keywords count for results display
+      const missingKeywords = currentAtsResult?.missingKeywords || keywords
+      const missingKeywordsCount = missingKeywords.length
       
       // Log the data we're working with
       console.log("Job Description:", jobDescription)
       console.log("Using Keywords:", keywords)
       console.log("User Notes:", userNotes)
       console.log("Initial ATS Score:", initialScore)
+      console.log("Current ATS Result:", currentAtsResult)
+      console.log("Missing Keywords Count:", missingKeywordsCount)
       
       // Step 1: Annotate Resume
       setCurrentStep("Analyzing resume and matching keywords...")
       updateProgressSmooth(20)
       
+      // Use only missing keywords for annotation
       const annotateResult = await annotateResume(
-        keywords, 
+        missingKeywords, 
         jobDescription, 
         userNotes.trim() || "The user didn't provide any notes, ignore this", 
         controller.signal
@@ -138,7 +155,7 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
       
       // Complete
       setCurrentStep("Optimization complete!")
-      onAnalysisComplete(optimizedResume, initialScore || undefined, finalAtsScore)
+      onAnalysisComplete(optimizedResume, initialScore ?? undefined, finalAtsScore, missingKeywordsCount)
       
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
@@ -163,6 +180,12 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
       setCurrentStep("Cancelling...")
       setProgress(0)
       
+      // Clear any ongoing progress animation
+      if (progressInterval) {
+        clearInterval(progressInterval)
+        setProgressInterval(null)
+      }
+      
       // Give a brief moment to show cancellation, then reset
       setTimeout(() => {
         setIsSubmitting(false)
@@ -184,10 +207,10 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
     // Recalculate ATS score with updated keywords
     if (resumeMd && updatedKeywords.length > 0) {
       const atsResult = calculateAtsScore(resumeMd, updatedKeywords)
-      setCurrentAtsScore(atsResult.score)
+      setCurrentAtsResult(atsResult)
       console.log("ATS Score recalculated after keyword removal:", atsResult.score)
     } else {
-      setCurrentAtsScore(null)
+      setCurrentAtsResult(null)
     }
   }
 
@@ -205,7 +228,7 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
       // Recalculate ATS score with updated keywords
       if (resumeMd) {
         const atsResult = calculateAtsScore(resumeMd, updatedKeywords)
-        setCurrentAtsScore(atsResult.score)
+        setCurrentAtsResult(atsResult)
         console.log("ATS Score recalculated after keyword edit:", atsResult.score)
       }
     }
@@ -224,7 +247,7 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
     if (!jobDescription.trim()) {
       setKeywords([])
       setKeywordsError("")
-      setCurrentAtsScore(null)
+      setCurrentAtsResult(null)
       return
     }
 
@@ -240,16 +263,16 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
         if (resumeMd && extractedKeywords.length > 0) {
           console.log("Calculating ATS score with extracted keywords...")
           const atsResult = calculateAtsScore(resumeMd, extractedKeywords)
-          setCurrentAtsScore(atsResult.score)
+          setCurrentAtsResult(atsResult)
           console.log("ATS Score calculated:", atsResult.score)
         } else {
-          setCurrentAtsScore(null)
+          setCurrentAtsResult(null)
         }
       } catch (error) {
         console.error("Keyword extraction failed:", error)
         setKeywordsError("Failed to extract keywords. Please try again.")
         setKeywords([])
-        setCurrentAtsScore(null)
+        setCurrentAtsResult(null)
       } finally {
         setKeywordsLoading(false)
       }
@@ -257,6 +280,15 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
 
     return () => clearTimeout(timeoutId)
   }, [jobDescription, resumeMd])
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (progressInterval) {
+        clearInterval(progressInterval)
+      }
+    }
+  }, [progressInterval])
 
 
   // Circular progress component for ATS score
@@ -504,15 +536,15 @@ Include:
                     <div className="lg:col-span-1">
                       <div className="bg-white/5 border border-white/20 rounded-xl p-4 h-full flex flex-col items-center justify-center text-center min-h-[140px]">
                         <h4 className="text-white font-medium text-sm mb-3">ATS Score</h4>
-                        {currentAtsScore !== null ? (
+                        {currentAtsResult !== null ? (
                           <>
-                            <AtsScoreCircle score={currentAtsScore} />
+                            <AtsScoreCircle score={currentAtsResult.score} />
                             <p className="text-gray-400 text-xs mt-2">
-                              {currentAtsScore >= 80 
+                              {currentAtsResult.score >= 80 
                                 ? "Excellent!" 
-                                : currentAtsScore >= 60 
+                                : currentAtsResult.score >= 60 
                                   ? "Good" 
-                                  : currentAtsScore >= 40 
+                                  : currentAtsResult.score >= 40 
                                     ? "Needs work" 
                                     : "Poor match"
                               }

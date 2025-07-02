@@ -92,16 +92,6 @@ export function calculateAtsScore(resumeMd: string, keywords: string[]): AtsScor
     recommendations
   };
 
-  // Log the result
-  console.log("=== ATS SCORE ANALYSIS ===");
-  console.log(`Overall Score: ${result.score}/100`);
-  console.log(`Keywords Matched: ${matchedKeywords.length}/${keywords.length}`);
-  console.log(`Exact Matches: ${matchedKeywords.join(", ")}`);
-  console.log(`Partial Matches: ${partialMatches.join(", ")}`);
-  console.log(`Missing Keywords: ${missingKeywords.join(", ")}`);
-  console.log("Recommendations:", recommendations);
-  console.log("========================");
-
   return result;
 }
 
