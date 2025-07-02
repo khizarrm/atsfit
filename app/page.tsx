@@ -10,8 +10,12 @@ import { UploadView } from "@/components/upload-view"
 import { DashboardView } from "@/components/dashboard-view"
 import { ResultsView } from "@/components/results-view"
 import { ProfileView } from "@/components/profile-view"
+import { ResumeSetupView } from "@/components/resume-setup-view"
 
 import { supabase } from "@/lib/supabase"
+import type { AuthChangeEvent } from "@supabase/supabase-js"
+import { useAuth } from "@/contexts/auth-context"
+import { getUserResume } from "@/lib/database/resume-operations"
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -21,6 +25,7 @@ type AppState =
   | "login"
   | "tryit"
   | "upload"
+  | "resume-setup"
   | "dashboard"
   | "results"
   | "profile"
@@ -93,6 +98,7 @@ function BackgroundGlow() {
 
 export default function ATSFitApp() {
   /* ------------------------------- State --------------------------------- */
+  const { loading: authLoading } = useAuth()
   const [currentState, setCurrentState] = useState<AppState>("login")
   const [user, setUser] = useState<User | null>(null)
   const [isTrialMode, setIsTrialMode] = useState(false)
@@ -111,10 +117,10 @@ export default function ATSFitApp() {
   currentStateRef.current = currentState
 
   /* ----------------------------- Lifecycle ------------------------------ */
-  // Restore last screen (except auth screens) on refresh
+  // Restore last screen (except auth screens and setup) on refresh
   useEffect(() => {
     const savedState = localStorage.getItem("ATSFitAppState") as AppState | null
-    if (savedState && savedState !== "login" && savedState !== "tryit") {
+    if (savedState && !["login", "tryit", "resume-setup"].includes(savedState)) {
       setCurrentState(savedState)
     }
   }, [])
@@ -123,19 +129,43 @@ export default function ATSFitApp() {
   useEffect(() => {
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session) => {
       const prev = currentStateRef.current
       console.log("Auth event", event, "state ref was", prev)
 
       if (session?.user) {
         // Logged in
-        setUser({
+        const userData = {
           id: session.user.id,
           email: session.user.email!,
           name: session.user.user_metadata.full_name || session.user.email!,
-        })
+        }
+        setUser(userData)
         setIsTrialMode(false)
-        setCurrentState((state) => (state === "login" || state === "tryit" ? "dashboard" : state))
+        
+        // For new signups, first-time login, or when coming from login/tryit, check if user has resume
+        if (prev === "login" || prev === "tryit" || event === "SIGNED_IN") {
+          try {
+            const resumeResult = await getUserResume(session.user.id)
+            console.log("Resume check result:", resumeResult)
+            
+            // If no resume exists or is empty, redirect to setup
+            if (!resumeResult.success || !resumeResult.data || !resumeResult.data.resume_md?.trim()) {
+              console.log("No resume found, redirecting to setup")
+              setCurrentState("resume-setup")
+            } else {
+              console.log("Resume found, going to dashboard")
+              setCurrentState("dashboard")
+            }
+          } catch (error) {
+            console.error("Error checking user resume:", error)
+            // If error checking resume, redirect to setup to be safe
+            setCurrentState("resume-setup")
+          }
+        } else {
+          // For other states, preserve current state or go to dashboard
+          setCurrentState((state) => (state === "login" || state === "tryit" ? "dashboard" : state))
+        }
       } else {
         // Logged out
         setUser(null)
@@ -147,9 +177,9 @@ export default function ATSFitApp() {
     return () => subscription.unsubscribe()
   }, [isTrialMode])
 
-  // Persist navigation state (except auth screens)
+  // Persist navigation state (except auth screens and setup)
   useEffect(() => {
-    if (!["login", "tryit"].includes(currentState)) {
+    if (!["login", "tryit", "resume-setup"].includes(currentState)) {
       localStorage.setItem("ATSFitAppState", currentState)
     }
   }, [currentState])
@@ -231,6 +261,14 @@ export default function ATSFitApp() {
             uploadedText={uploadedText}
           />
         )
+      case "resume-setup":
+        return (
+          <ResumeSetupView
+            onComplete={() => goTo("dashboard")}
+            onSkip={() => goTo("dashboard")}
+            user={user}
+          />
+        )
       case "dashboard":
         return (
           <DashboardView
@@ -264,6 +302,24 @@ export default function ATSFitApp() {
   }
 
   /* ------------------------------ Render ------------------------------- */
+  
+  // Show loading screen while auth is initializing
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-black relative text-white flex items-center justify-center">
+        <BackgroundGlow />
+        <div className="text-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+            className="w-8 h-8 border-2 border-[#00FFAA] border-t-transparent rounded-full mx-auto mb-4"
+          />
+          <p className="text-gray-400">Initializing...</p>
+        </div>
+      </div>
+    )
+  }
+  
   return (
     <div className="min-h-screen bg-black relative text-white">
       <BackgroundGlow />

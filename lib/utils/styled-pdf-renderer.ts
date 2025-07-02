@@ -111,7 +111,7 @@ export class StyledPDFRenderer {
     
     // Add underline for headers
     if (element.styles.textAlign === 'center') {
-      const lineY = this.currentY + 2
+      const lineY = this.currentY + 1
       const lineStartX = (this.pageWidth - textWidth) / 2
       const lineEndX = lineStartX + textWidth
       this.pdf.setDrawColor('#999')
@@ -119,7 +119,7 @@ export class StyledPDFRenderer {
       this.pdf.line(lineStartX, lineY, lineEndX, lineY)
     }
     
-    this.currentY += element.styles.fontSize + 2
+    this.currentY += element.styles.fontSize * 1.2 // Match preview line height exactly
   }
   
   /**
@@ -133,7 +133,7 @@ export class StyledPDFRenderer {
     const x = this.margins.left + element.styles.marginLeft
     this.pdf.text(element.content.toUpperCase(), x, this.currentY)
     
-    this.currentY += element.styles.fontSize + 1
+    this.currentY += element.styles.fontSize * 1.2 // Match preview line height exactly
   }
   
   /**
@@ -147,7 +147,7 @@ export class StyledPDFRenderer {
     const x = this.margins.left + element.styles.marginLeft
     this.pdf.text(element.content, x, this.currentY)
     
-    this.currentY += element.styles.fontSize + 1
+    this.currentY += element.styles.fontSize * 1.2 // Match preview line height exactly
   }
   
   /**
@@ -175,7 +175,7 @@ export class StyledPDFRenderer {
       }
       
       this.pdf.text(line, x, this.currentY)
-      this.currentY += element.styles.fontSize * 1.1 // Tighter line height to match preview
+      this.currentY += element.styles.fontSize * 1.2 // Match preview line height exactly
     }
   }
   
@@ -203,7 +203,7 @@ export class StyledPDFRenderer {
       }
       
       this.pdf.text(lines[i], textX, this.currentY)
-      this.currentY += element.styles.fontSize * 1.1 // Tighter spacing
+      this.currentY += element.styles.fontSize * 1.2 // Match preview line height exactly
     }
   }
   
@@ -240,7 +240,7 @@ export class StyledPDFRenderer {
       }
       
       this.pdf.text(line, x, this.currentY)
-      this.currentY += element.styles.fontSize * 1.1 // Tighter spacing
+      this.currentY += element.styles.fontSize * 1.2 // Match preview line height exactly
     }
   }
   

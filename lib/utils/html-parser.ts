@@ -42,18 +42,18 @@ export function parsePreviewHTML(htmlContent: string): ParsedDocument {
     return match ? parseFloat(match[0]) : 0
   }
   
-  // Helper to convert em/rem to points (much smaller values to match preview)
+  // Helper to convert em/rem to points (match preview exactly)
   const convertToPoints = (value: string, baseSize: number = 10): number => {
     if (value.includes('em')) {
-      return extractNumber(value) * baseSize * 0.3 // Reduce spacing significantly
+      return extractNumber(value) * baseSize * 0.75 // 1em = 0.75 points at 10px base
     }
     if (value.includes('rem')) {
-      return extractNumber(value) * baseSize * 0.3 // Reduce spacing significantly  
+      return extractNumber(value) * baseSize * 0.75 // 1rem = 0.75 points at 10px base
     }
     if (value.includes('px')) {
       return extractNumber(value) * 0.75 // px to pt conversion
     }
-    return extractNumber(value) * 0.3 // Reduce all spacing
+    return extractNumber(value) * 0.75 // Use more accurate conversion
   }
   
   // Parse inline styles from style attribute
@@ -77,8 +77,8 @@ export function parsePreviewHTML(htmlContent: string): ParsedDocument {
     const styleAttr = element.getAttribute('style') || ''
     const inlineStyles = parseInlineStyles(styleAttr)
     
-    // Skip empty elements except HR, and skip UL elements (process LI directly)
-    if ((!textContent && tagName !== 'hr') || tagName === 'ul') return
+    // Skip empty elements except HR
+    if (!textContent && tagName !== 'hr') return
     
     let parsedElement: ParsedElement | null = null
     
@@ -88,13 +88,13 @@ export function parsePreviewHTML(htmlContent: string): ParsedDocument {
           type: 'h1',
           content: textContent,
           styles: {
-            fontSize: 14, // Fixed size to match preview better
+            fontSize: 18, // H1 should be large and prominent
             fontWeight: 'bold',
             fontStyle: 'normal',
             textAlign: 'center',
             color: inlineStyles['color'] || '#111',
             marginTop: 0,
-            marginBottom: 2,
+            marginBottom: 8, // More space after name
             marginLeft: 0
           }
         }
@@ -105,13 +105,13 @@ export function parsePreviewHTML(htmlContent: string): ParsedDocument {
           type: 'h3',
           content: textContent,
           styles: {
-            fontSize: 10, // Smaller to match preview
+            fontSize: 14, // H3 section headers should be readable
             fontWeight: 'bold',
             fontStyle: 'normal',
             textAlign: 'left',
             color: inlineStyles['color'] || '#222',
-            marginTop: 4,
-            marginBottom: 1,
+            marginTop: 12, // More space before section headers
+            marginBottom: 4, // Space after section headers
             marginLeft: 0
           }
         }
@@ -122,13 +122,13 @@ export function parsePreviewHTML(htmlContent: string): ParsedDocument {
           type: 'h4',
           content: textContent,
           styles: {
-            fontSize: 9, // Small to match preview
+            fontSize: 12, // H4 subsection headers should be readable
             fontWeight: 'bold',
             fontStyle: 'normal',
             textAlign: 'left',
             color: inlineStyles['color'] || '#333',
-            marginTop: 2,
-            marginBottom: 1,
+            marginTop: 6, // Space before subsection headers
+            marginBottom: 3, // Space after subsection headers
             marginLeft: 0
           }
         }
@@ -142,13 +142,13 @@ export function parsePreviewHTML(htmlContent: string): ParsedDocument {
           type: 'p',
           content: textContent,
           styles: {
-            fontSize: 8.5, // Small to match preview
+            fontSize: 11, // Body text should be standard readable size
             fontWeight: 'normal',
             fontStyle: 'normal',
             textAlign: inlineStyles['text-align'] === 'center' ? 'center' : 'left',
             color: inlineStyles['color'] || '#333',
-            marginTop: 0.5,
-            marginBottom: 0.5,
+            marginTop: isContactInfo ? 0 : 2, // Normal spacing for body text
+            marginBottom: isContactInfo ? 6 : 4, // More space after paragraphs
             marginLeft: 0
           },
           isContactInfo
@@ -160,18 +160,28 @@ export function parsePreviewHTML(htmlContent: string): ParsedDocument {
           type: 'li',
           content: textContent,
           styles: {
-            fontSize: 8.5, // Small to match preview
+            fontSize: 11, // List items should match body text
             fontWeight: 'normal',
             fontStyle: 'normal',
             textAlign: 'left',
             color: inlineStyles['color'] || '#333',
-            marginTop: 0.2,
-            marginBottom: 0.2,
-            marginLeft: 15 // Space for bullet
+            marginTop: 1, // Small space before list items
+            marginBottom: 2, // Small space after list items
+            marginLeft: 15 // Proper indentation for bullets
           },
           isBulletPoint: true
         }
         break
+        
+      case 'ul':
+      case 'ol':
+        // For UL/OL, process children LI elements but don't create element for the container
+        for (const child of element.children) {
+          if (child.tagName.toLowerCase() === 'li') {
+            processElement(child, tagName)
+          }
+        }
+        return // Don't process further or add this element
         
       case 'hr':
         parsedElement = {
@@ -197,13 +207,13 @@ export function parsePreviewHTML(htmlContent: string): ParsedDocument {
             type: 'text',
             content: textContent,
             styles: {
-              fontSize: convertToPoints('0.85em', 10),
+              fontSize: 11, // Default text should be readable
               fontWeight: 'normal',
               fontStyle: 'normal',
               textAlign: 'left',
               color: '#333',
-              marginTop: 1,
-              marginBottom: 1,
+              marginTop: 2,
+              marginBottom: 4,
               marginLeft: 0
             }
           }
@@ -215,8 +225,8 @@ export function parsePreviewHTML(htmlContent: string): ParsedDocument {
     }
     
     // Only process child elements if this wasn't a content element
-    // Avoid processing children of LI, P, H1, H3, H4 to prevent duplicates
-    if (!['li', 'p', 'h1', 'h3', 'h4'].includes(tagName)) {
+    // Avoid processing children of LI, P, H1, H3, H4, UL, OL to prevent duplicates
+    if (!['li', 'p', 'h1', 'h3', 'h4', 'ul', 'ol'].includes(tagName)) {
       for (const child of element.children) {
         processElement(child, tagName)
       }
@@ -228,6 +238,9 @@ export function parsePreviewHTML(htmlContent: string): ParsedDocument {
   for (const child of body.children) {
     processElement(child)
   }
+  
+  console.log(`Parsed ${elements.length} elements for PDF generation`)
+  console.log('Elements:', elements.map(el => `${el.type}: ${el.content.substring(0, 50)}...`))
   
   return {
     elements,

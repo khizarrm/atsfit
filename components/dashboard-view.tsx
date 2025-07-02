@@ -4,12 +4,13 @@ import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useState, useEffect } from "react"
-import { Send, Info, Sparkles } from "lucide-react"
+import { Send, Info, Sparkles, ChevronDown } from "lucide-react"
 import { annotateResume, rewriteResume, AtsScoreResponse, extractKeywordsFromJobDescription } from "@/lib/api"
 import { calculateAtsScore, AtsScoreResult } from "@/lib/utils/ats-scorer"
 import { useAuth } from "@/contexts/auth-context"
 import { LoadingProgress } from "@/components/LoadingProgress"
 import { SharedHeader } from "@/components/shared-header"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 interface DashboardViewProps {
   onJobSubmit: (description: string) => void
@@ -43,6 +44,7 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
   const [editingKeywordValue, setEditingKeywordValue] = useState("")
   const [storedInitialAtsScore, setStoredInitialAtsScore] = useState<number | null>(null)
   const [progressInterval, setProgressInterval] = useState<NodeJS.Timeout | null>(null)
+  const [isHowToOpen, setIsHowToOpen] = useState(false)
 
   const updateProgressSmooth = (targetProgress: number) => {
     // Clear any existing progress animation
@@ -378,8 +380,46 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
           <div className="text-center mb-8">
             <h2 className="text-4xl font-bold text-white mb-4">Optimize your resume</h2>
             <p className="text-gray-300 text-xl mb-2">
-              This AI should (emphasis on should) optimize your resume to ensure you get a significantly higher ATS score.
+              Get your resume optimized for ATS systems and significantly improve your match score.
             </p>
+            
+            {/* Tips Section */}
+            <Collapsible open={isHowToOpen} onOpenChange={setIsHowToOpen}>
+              <CollapsibleTrigger className="inline-flex items-center space-x-2 text-[#00FFAA] hover:text-[#00DD99] transition-colors duration-200 mt-4 mb-2">
+                <span className="text-sm font-medium">Tips</span>
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isHowToOpen ? 'rotate-180' : ''}`} />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-4">
+                <div className="max-w-4xl mx-auto">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+                      <span className="text-[#00FFAA] mb-2 block">Insert your job description</span>
+                      <p className="text-gray-300">For best use and performance, add just the important stuff, not branding fluff. Focus on role requirements, skills, and qualifications. Use this only for specific jobs. If you're applying for a broad job, modify the keywords and provide instructions in the notes as necessary. You'll get faster responses with shorter, focused job descriptions.</p>
+                    </div>
+                    
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+                      <span className="text-[#00FFAA] mb-2 block">Proofread keywords</span>
+                      <p className="text-gray-300">Review the extracted keywords carefully. Click to remove irrelevant ones or hold to edit them. These keywords directly impact your ATS score.</p>
+                    </div>
+                    
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+                      <span className="text-[#00FFAA] mb-2 block">Additional notes (optional)</span>
+                      <p className="text-gray-300">Feel free to add anything useful. Cases can be removing a certain project, adding another one, specifying a certain aspect to focus on, or refining a certain section. When adding projects, be as specific as possible. The AI will be able to add its own points related to the job description if you aren't super specific, but better to be more accurate.</p>
+                    </div>
+                    
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+                      <span className="text-[#00FFAA] mb-2 block">Limitations</span>
+                      <p className="text-gray-300">The optimization will only work according to the info provided. If your resume only has React and you give a description with C++, you won't get a 100% resume score. To optimize for this, try adding a C++ project in the description.</p>
+                    </div>
+                    
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+                      <span className="text-[#00FFAA] mb-2 block">If you need to modify your resume</span>
+                      <p className="text-gray-300">Please go to <span className="text-[#00FFAA]">Profile → Manage My Resume</span>.</p>
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
 
 

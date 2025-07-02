@@ -91,6 +91,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
         setPdfProgress(progress)
       }
       
+      // Use the proper PDF converter that creates text-based PDFs
       const result: PDFGenerationResult = await convertMarkdownToPDF(
         optimizedResume,
         'optimized-resume.pdf',
@@ -102,7 +103,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
         throw result.error || new Error('PDF generation failed')
       }
       
-      console.log(`PDF generated successfully using ${result.method} method`)
+      console.log('PDF generated successfully using preview-exact method')
       
     } catch (error) {
       console.error('PDF generation failed:', error)

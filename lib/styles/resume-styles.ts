@@ -2,8 +2,8 @@ import { ResumeStyles } from '../types/pdf'
 
 export const DEFAULT_RESUME_STYLES: ResumeStyles = {
   fontFamily: 'Georgia, "Helvetica Neue", Helvetica, Arial, sans-serif',
-  fontSize: '12px',
-  lineHeight: '1.25',
+  fontSize: '10px',
+  lineHeight: '1.0',
   colors: {
     primary: '#222',
     secondary: '#333',
@@ -12,9 +12,9 @@ export const DEFAULT_RESUME_STYLES: ResumeStyles = {
     background: '#fff'
   },
   spacing: {
-    margin: '0.4in',
+    margin: '0.2in',
     padding: '0.1rem',
-    sectionGap: '0.2rem'
+    sectionGap: '0.1rem'
   }
 }
 
@@ -26,7 +26,7 @@ export function generateResumeCSS(styles: ResumeStyles = DEFAULT_RESUME_STYLES):
   font-size: ${styles.fontSize};
   line-height: ${styles.lineHeight};
   margin: ${styles.spacing.margin} auto;
-  max-width: 7.5in;
+  max-width: 6in;
   color: ${styles.colors.text};
   background: ${styles.colors.background};
   -webkit-font-smoothing: antialiased;
@@ -36,14 +36,14 @@ export function generateResumeCSS(styles: ResumeStyles = DEFAULT_RESUME_STYLES):
 /* ========== Headings ========== */
 .pdf-content h1, .pdf-content h2, .pdf-content h3, .pdf-content h4 {
   margin: 0 0 ${styles.spacing.padding} 0;
-  line-height: 1.2;
+  line-height: 1.0;
   font-weight: bold;
   color: ${styles.colors.primary};
   page-break-after: avoid;
 }
 
 .pdf-content h1 {
-  font-size: 1.4em;
+  font-size: 1.0em;
   text-align: center;
   margin-bottom: 0.08rem;
   font-weight: bold;

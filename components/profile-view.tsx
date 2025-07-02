@@ -54,7 +54,15 @@ export function ProfileView({ onBack, user }: ProfileViewProps) {
         return
       }
 
-      const result = await getUserResume(user.id)
+      // Add timeout to prevent stuck loading
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Request timed out')), 10000)
+      )
+      
+      const result = await Promise.race([
+        getUserResume(user.id),
+        timeoutPromise
+      ]) as any
       console.log('getUserResume result:', result)
 
       if (result.success && result.data) {
@@ -128,7 +136,7 @@ phone • email • website • github
     try {
       setIsSaving(true)
       
-      const result = await saveUserResume(user.id, resumeContent)
+      const result = await saveUserResume(user.id, resumeContent, false)
       console.log('saveUserResume result:', result)
 
       if (result.success) {
@@ -258,18 +266,7 @@ phone • email • website • github
             </Button>
           </div>
         }
-        rightContent={
-          <div className="flex items-center space-x-4 w-48 justify-end">
-            <Button
-              onClick={() => setShowPreview(!showPreview)}
-              variant="ghost"
-              className="text-white hover:bg-white/10 hover:text-white"
-            >
-              {showPreview ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
-              {showPreview ? "Hide Preview" : "Show Preview"}
-            </Button>
-          </div>
-        }
+        onGoToProfile={() => {}} // Current page is profile, so no navigation needed
         user={user}
       />
 
@@ -289,7 +286,18 @@ phone • email • website • github
               </div>
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">Manage Your Resume</h2>
-            <p className="text-gray-400 text-sm">Edit your resume markdown and preview the formatted output</p>
+            <div className="flex items-center justify-center space-x-4">
+              <p className="text-gray-400 text-sm">Edit your resume markdown and preview the formatted output</p>
+              <Button
+                onClick={() => setShowPreview(!showPreview)}
+                variant="outline"
+                size="sm"
+                className="bg-black/40 backdrop-blur-md border-[#00FFAA]/50 text-[#00FFAA] hover:bg-[#00FFAA]/20 hover:border-[#00FFAA] hover:shadow-[0_0_10px_rgba(0,255,170,0.3)] transition-all duration-300"
+              >
+                {showPreview ? <EyeOff className="mr-2 h-3 w-3" /> : <Eye className="mr-2 h-3 w-3" />}
+                {showPreview ? "Hide Preview" : "Show Preview"}
+              </Button>
+            </div>
           </div>
 
           {/* Message Display */}

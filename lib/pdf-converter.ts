@@ -77,18 +77,22 @@ class PDFConverter {
       try {
         // Try enhanced text-based method first (ATS-friendly, matches preview)
         result = await this.generateTextBasedPreview(markdownContent, filename, options)
+        console.log('Successfully used text-based preview method')
       } catch (previewError) {
-        console.warn('Text-based preview method failed, trying canvas method:', previewError)
+        console.warn('Text-based preview method failed, trying ATS method:', previewError)
         try {
-          // Try canvas method with default styling
-          result = await this.generateWithCanvas(markdownContent, filename, options)
-        } catch (canvasError) {
-          console.warn('Canvas method failed, trying ATS method:', canvasError)
+          result = await this.generateATSFriendly(markdownContent, filename, options)
+          console.log('Successfully used ATS-friendly method')
+        } catch (atsError) {
+          console.warn('ATS method failed, trying canvas method:', atsError)
           try {
-            result = await this.generateATSFriendly(markdownContent, filename, options)
-          } catch (atsError) {
-            console.warn('ATS method failed, trying direct method:', atsError)
+            // Try canvas method with default styling
+            result = await this.generateWithCanvas(markdownContent, filename, options)
+            console.log('Successfully used canvas method')
+          } catch (canvasError) {
+            console.warn('Canvas method failed, trying direct method:', canvasError)
             result = await this.generateWithDirect(markdownContent, filename, options)
+            console.log('Successfully used direct method (fallback)')
           }
         }
       }
@@ -173,7 +177,6 @@ class PDFConverter {
     let yPosition = 0.8
     const pageWidth = 6.5  // Reduced from 7.5 to prevent text going off page
     const marginLeft = 1
-    const marginRight = 1
 
     // Helper function to add a horizontal line divider
     const addDivider = () => {
@@ -202,7 +205,7 @@ class PDFConverter {
       pdf.setFontSize(fontSize)
       
       const lines = pdf.splitTextToSize(text.trim(), pageWidth)
-      lines.forEach((line: string, index: number) => {
+      lines.forEach((line: string) => {
         if (yPosition > 10) {
           pdf.addPage()
           yPosition = 0.8
@@ -215,7 +218,7 @@ class PDFConverter {
         } else {
           pdf.text(line, marginLeft, yPosition)
         }
-        yPosition += fontSize * 0.014  // Slightly increased line height
+        yPosition += fontSize * 0.018  // Improved line height for readability
       })
       
       yPosition += extraSpaceAfter
@@ -236,29 +239,29 @@ class PDFConverter {
 
       switch (tagName) {
         case 'h1':
-          addText(text, 15, 'bold', 'center', 0, 0.15)
+          addText(text, 20, 'bold', 'center', 0, 0.2)
           break
         case 'h2':
-          addText(text, 12, 'bold', 'left', 0.25, 0.02)
+          addText(text, 16, 'bold', 'left', 0.25, 0.02)
           addDivider()
           yPosition += 0.08
           break
         case 'h3':
-          addText(text, 11, 'bold', 'left', 0.15, 0.08)
+          addText(text, 14, 'bold', 'left', 0.15, 0.08)
           break
         case 'h4':
-          addText(text, 10, 'bold', 'left', 0.12, 0.05)
+          addText(text, 12, 'bold', 'left', 0.12, 0.05)
           break
         case 'p':
           if (element.previousElementSibling?.tagName === 'H1') {
             // Contact info after name
-            addText(text, 10, 'normal', 'center', 0, 0.25)
+            addText(text, 11, 'normal', 'center', 0, 0.25)
           } else {
-            addText(text, 10, 'normal', 'left', 0.05, 0.08)
+            addText(text, 11, 'normal', 'left', 0.05, 0.08)
           }
           break
         case 'li':
-          addText(`• ${text}`, 10, 'normal', 'left', 0.02, 0.06)
+          addText(`• ${text}`, 11, 'normal', 'left', 0.02, 0.06)
           break
         case 'ul':
         case 'ol':
@@ -268,7 +271,7 @@ class PDFConverter {
         default:
           // Only process leaf elements with text
           if (text && element.children.length === 0 && !['ul', 'ol'].includes(element.parentElement?.tagName?.toLowerCase() || '')) {
-            addText(text, 10, 'normal', 'left', 0.05, 0.08)
+            addText(text, 11, 'normal', 'left', 0.05, 0.08)
           }
       }
     }
@@ -339,10 +342,10 @@ class PDFConverter {
         format: options.format || 'letter',
         orientation: options.orientation || 'portrait',
         margins: {
-          top: 30, // Smaller margins to match preview
-          right: 30,
-          bottom: 30,
-          left: 30
+          top: 15, // 20px in preview = 15pt
+          right: 15,
+          bottom: 15,
+          left: 15
         },
         fontFamily
       })

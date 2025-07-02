@@ -58,9 +58,9 @@ export async function getUserResume(userId: string): Promise<ResumeOperationResu
 /**
  * Save or update user's resume
  */
-export async function saveUserResume(userId: string, resumeMd: string): Promise<ResumeOperationResult> {
+export async function saveUserResume(userId: string, resumeMd: string, isNewUser: boolean = false): Promise<ResumeOperationResult> {
   try {
-    console.log('saveUserResume called with userId:', userId, 'resumeMd length:', resumeMd.length)
+    console.log('saveUserResume called with userId:', userId, 'resumeMd length:', resumeMd.length, 'isNewUser:', isNewUser)
     
     // Validate input
     if (!userId || !resumeMd.trim()) {
@@ -71,41 +71,62 @@ export async function saveUserResume(userId: string, resumeMd: string): Promise<
       }
     }
 
-    // Try to update first
-    console.log('Attempting to update existing resume for user:', userId)
-    const { data: updateData, error: updateError, count } = await supabase
-      .from('resumes')
-      .update({ 
-        resume_md: resumeMd,
-        created_at: new Date().toISOString()
-      })
-      .eq('user_id', userId)
-      .select()
+    let data, error
 
-    console.log('Update attempt result:', { updateData, updateError, count })
-
-    let result
-    
-    // If no rows were updated, create a new resume
-    if (updateData && updateData.length === 0) {
-      console.log('No existing resume found, creating new one...')
-      const { data: insertData, error: insertError } = await supabase
+    if (isNewUser) {
+      // For new users (resume setup), always insert
+      console.log('Creating new resume for new user:', userId)
+      console.log('About to call supabase insert...')
+      
+      try {
+        const result = await Promise.race([
+          supabase
+            .from('resumes')
+            .insert({
+              user_id: userId,
+              resume_md: resumeMd
+            })
+            .select(),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Database operation timeout')), 10000)
+          )
+        ])
+        
+        console.log('Insert operation completed:', result)
+        
+        if (result.data && result.data.length > 0) {
+          data = result.data[0]
+          error = result.error
+        } else {
+          data = null
+          error = result.error || new Error('No data returned from insert')
+        }
+      } catch (timeoutError) {
+        console.error('Database operation timed out or failed:', timeoutError)
+        error = timeoutError
+        data = null
+      }
+    } else {
+      // For existing users (profile view), update existing resume
+      console.log('Updating existing resume for user:', userId)
+      const result = await supabase
         .from('resumes')
-        .insert({
-          user_id: userId,
-          resume_md: resumeMd
+        .update({
+          resume_md: resumeMd,
+          created_at: new Date().toISOString() // Update timestamp
         })
+        .eq('user_id', userId)
         .select()
         .single()
-
-      console.log('Insert result:', { insertData, insertError })
-      result = { data: insertData, error: insertError }
-    } else {
-      result = { data: updateData?.[0] || null, error: updateError }
+      
+      data = result.data
+      error = result.error
     }
 
-    if (result.error) {
-      console.error('Error saving user resume:', result.error)
+    console.log('Save result:', { data, error })
+
+    if (error) {
+      console.error('Error saving user resume:', error)
       return {
         error: 'Failed to save resume',
         success: false
@@ -113,7 +134,7 @@ export async function saveUserResume(userId: string, resumeMd: string): Promise<
     }
 
     return {
-      data: result.data,
+      data,
       success: true
     }
   } catch (error) {

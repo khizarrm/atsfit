@@ -13,6 +13,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ data: any; error: any }>
   signOut: () => Promise<{ error: any }>
   refreshResume: () => Promise<void>
+  hasResume: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -52,10 +53,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
-        fetchUserResume(session.user.id)
+        fetchUserResume(session.user.id).finally(() => setLoading(false))
       } else {
         setResumeMd(null)
+        setLoading(false)
       }
+    }).catch((error) => {
+      console.error('Auth session error:', error)
       setLoading(false)
     })
 
@@ -66,11 +70,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
-        fetchUserResume(session.user.id)
+        fetchUserResume(session.user.id).finally(() => setLoading(false))
       } else {
         setResumeMd(null)
+        setLoading(false)
       }
-      setLoading(false)
     })
 
     return () => subscription.unsubscribe()
@@ -109,6 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signOut,
     refreshResume,
+    hasResume: !!resumeMd && resumeMd.trim().length > 0,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
