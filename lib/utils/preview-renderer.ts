@@ -74,7 +74,7 @@ export function renderMarkdownPreview(markdown: string): string {
  */
 export const PREVIEW_CONTAINER_STYLES = {
   fontFamily: 'Georgia, "Times New Roman", serif',
-  fontSize: '14px',
+  fontSize: '12px',
   lineHeight: '1.4',
   color: '#111',
   backgroundColor: '#ffffff',
