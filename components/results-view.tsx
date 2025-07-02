@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useState, useEffect, useRef } from "react"
 import { Download, Copy, ArrowLeft, Eye, EyeOff, Crown, Lock, Sparkles, User, Info } from "lucide-react"
-import { usePDFGeneration } from "@/hooks/usePDFGeneration"
+import { generatePDF } from "@/lib/api"
 import { SharedHeader } from "@/components/shared-header"
 import { renderMarkdownPreview } from "@/lib/utils/preview-renderer"
 
@@ -50,8 +50,9 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
   const [showPreview, setShowPreview] = useState(false)
   const [calculatedFinalScore, setCalculatedFinalScore] = useState<number | null>(finalAtsScore || null)
   const [isCalculatingFinalScore, setIsCalculatingFinalScore] = useState(false)
-  const [pdfState, pdfActions] = usePDFGeneration()
   const hasCalculatedRef = useRef(false)
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  const [pdfError, setPdfError] = useState<string | null>(null)
 
   // Use the final ATS score passed from the optimization process
   useEffect(() => {
@@ -73,21 +74,106 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const handleOpenFullA4 = () => {
+    if (!optimizedResume.trim()) {
+      return
+    }
+    
+    const html = renderMarkdownPreview(optimizedResume)
+    const css = `
+      body {
+        font-family: 'Georgia, "Times New Roman", serif';
+        font-size: 14px;
+        line-height: 1.2;
+        color: #111;
+        background-color: #f5f5f5;
+        margin: 0;
+        padding: 40px;
+        display: flex;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      
+      .resume-container {
+        background: white;
+        width: 8.5in;
+        min-height: 11in;
+        padding: 0.5in;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        border-radius: 8px;
+      }
+      
+      h1 { font-size: 1.8em; text-align: center; margin-bottom: 0.1rem; font-weight: 700; color: #111; }
+      h3 { font-size: 1.2em; color: #222; margin-top: 0.25rem; margin-bottom: 0.1rem; font-weight: 600; border-bottom: 1px solid #888; padding-bottom: 0.05rem; }
+      h4 { font-size: 1.1em; font-weight: 400; color: #333; margin-bottom: 0.05rem; margin-top: 0.08rem; }
+      p { margin: 0 0 0.01rem 0; line-height: 1.2; font-size: 1em; color: #333; }
+      h1 + p { text-align: center; margin-bottom: 0.15rem; font-size: 1em; color: #333; line-height: 1.3; }
+      .bullet-point { margin: 0 0 0.01rem 1.2rem; position: relative; }
+      .bullet-point::before { content: "\u2022"; position: absolute; left: -1rem; color: #111; font-weight: bold; }
+      .bullet-content { line-height: 1.3; font-size: 1em; color: #333; }
+      hr { border: none; border-top: 1px solid #ccc; margin: 0.2rem 0; clear: both; }
+      strong { font-weight: 700; color: #111; }
+      em { font-style: italic; color: #333; }
+      u { text-decoration: underline; color: #333; }
+      a { color: #111; text-decoration: underline; }
+    `
+    
+    const fullHTML = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Optimized Resume - Full A4 View</title>
+        <style>${css}</style>
+      </head>
+      <body>
+        <div class="resume-container">
+          ${html}
+        </div>
+      </body>
+      </html>
+    `
+    
+    const blob = new Blob([fullHTML], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank')
+    
+    // Clean up the URL after a short delay
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+
   const handleDownload = async () => {
     if (isTrialMode) {
       onSignUp()
       return
     }
     
-    // Use the API-based PDF generation
-    const success = await pdfActions.generatePDF(optimizedResume, {
-      format: 'letter',
-      filename: 'optimized-resume.pdf'
-    })
-
-    // If PDF generation fails, fallback to markdown download
-    if (!success && pdfState.error) {
-      console.log('PDF generation failed, falling back to markdown download')
+    if (!optimizedResume.trim()) {
+      return
+    }
+    
+    try {
+      setIsGeneratingPDF(true)
+      setPdfError(null)
+      
+      const result = await generatePDF(optimizedResume, {
+        format: 'letter',
+        filename: 'optimized-resume.pdf'
+      })
+      
+      if (!result.success) {
+        throw new Error(result.error || 'PDF generation failed')
+      }
+      
+      console.log('PDF generated successfully')
+      
+    } catch (error) {
+      console.error('PDF generation failed:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      setPdfError(errorMessage)
+      
+      // Fallback to markdown download
       setTimeout(() => {
         const blob = new Blob([optimizedResume], { type: "text/plain" })
         const url = URL.createObjectURL(blob)
@@ -99,6 +185,13 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
         document.body.removeChild(a)
         URL.revokeObjectURL(url)
       }, 2000) // Give user time to see error
+      
+    } finally {
+      setIsGeneratingPDF(false)
+      // Clear progress after a short delay
+      setTimeout(() => {
+        setPdfError(null)
+      }, 3000)
     }
   }
 
@@ -436,7 +529,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                       className="bg-white rounded-xl p-4 max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
                       style={{ 
                         fontFamily: 'Georgia, "Times New Roman", serif',
-                        fontSize: '10px',
+                        fontSize: '14px',
                         lineHeight: '1.2',
                         color: '#111'
                       }}
@@ -470,14 +563,14 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                 <div className="space-y-3">
                   <Button
                     onClick={handleDownload}
-                    disabled={pdfState.isGenerating}
+                    disabled={isGeneratingPDF}
                     className={`w-full font-semibold py-3 rounded-lg hover:scale-105 transition-all duration-300 ${
                       isTrialMode
                         ? "bg-gray-700 hover:bg-gray-600 text-gray-300 border border-gray-600"
                         : "bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black hover:shadow-[0_0_30px_rgba(0,255,170,0.3)] disabled:opacity-50 disabled:hover:scale-100"
                     }`}
                   >
-                    {pdfState.isGenerating ? (
+                    {isGeneratingPDF ? (
                       <>
                         <motion.div
                           animate={{ rotate: 360 }}
@@ -506,31 +599,39 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                     {isTrialMode ? "Upgrade to Copy" : copied ? "Copied!" : "Copy Text"}
                   </Button>
                   
+                  <Button
+                    onClick={handleOpenFullA4}
+                    className="w-full bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white hover:shadow-[0_0_30px_rgba(0,255,170,0.3)] font-semibold py-3 rounded-lg hover:scale-105 transition-all duration-300"
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Full A4 View
+                  </Button>
+                  
                   {/* Progress indicator */}
-                  {pdfState.isGenerating && pdfState.progress > 0 && (
+                  {isGeneratingPDF && (
                     <div className="mt-4">
                       <div className="bg-white/10 rounded-full h-2 overflow-hidden">
                         <motion.div
                           className="h-full bg-gradient-to-r from-[#00FFAA] to-[#00DD99]"
                           initial={{ width: 0 }}
-                          animate={{ width: `${pdfState.progress}%` }}
-                          transition={{ duration: 0.3 }}
+                          animate={{ width: "100%" }}
+                          transition={{ duration: 2, repeat: Infinity }}
                         />
                       </div>
                       <p className="text-xs text-gray-400 mt-1 text-center">
-                        {pdfState.stage} ({Math.round(pdfState.progress)}%)
+                        Generating PDF...
                       </p>
                     </div>
                   )}
                   
                   {/* Error message */}
-                  {pdfState.error && (
+                  {pdfError && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="text-xs text-red-400 text-center"
                     >
-                      PDF failed: {pdfState.error}. Downloading markdown instead...
+                      PDF failed: {pdfError}. Downloading markdown instead...
                     </motion.div>
                   )}
                 </div>

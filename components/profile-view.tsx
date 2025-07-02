@@ -36,11 +36,13 @@ export function ProfileView({ onBack, user }: ProfileViewProps) {
   const [pdfError, setPdfError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  const chatGPTPrompt = `Convert the following resume text exactly as written into Markdown format.
+  const chatGPTPrompt = 
+
+`Convert the following resume text exactly as written into Markdown format.
 
 Instructions:
 
-Do not rephrase, rewrite, or edit any content.
+Do not rephrase, rewrite, or edit any content. Do not change the format of the writing. 
 
 Use # (H1) only for my name at the top.
 
@@ -48,11 +50,24 @@ Use ### (H3) for section headings (like EXPERIENCE, EDUCATION, SKILLS, PROJECTS)
 
 Use #### (H4) for company or project titles.
 
-Keep bullet points, line breaks, and formatting exactly as in my input.
+Keep bullet points, line breaks, and formatting exactly as in my input. Do not add bullet points for project/experience titles, only for detailed points regarding an experience or project. 
 
 Output it as plain text so I can easily copy and paste it.
 
-Your only task is to strictly convert my resume to Markdown, preserving all content exactly.`
+Your only task is to strictly convert my resume to Markdown, preserving all content exactly.
+
+Bold small categories and project names, eg. Frameworks, Technologies. 
+
+Italicize company names, but bold the names of positions. 
+
+Underline quantifiable metrics. 
+
+Format bullet points with a '-'
+
+When returning, ensure you do not modify any content whatsoever. 
+
+Resume follows below:
+___________________________________________________________`
 
   // Load user's existing resume
   useEffect(() => {
