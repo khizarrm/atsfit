@@ -160,10 +160,9 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
       // Use only missing keywords for annotation
       const annotateResult = await annotateResume(
         resumeMd,
-        missingKeywords, 
-        jobDescription, 
-        userNotes.trim() || "The user didn't provide any notes, ignore this", 
-        controller.signal
+        jobDescription,
+        missingKeywords,
+        userNotes.trim() || "The user didn't provide any notes, ignore this"
       )
       console.log("Annotated Resume: ", annotateResult)
       setAnnotationData(annotateResult)
@@ -177,7 +176,7 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
       setCurrentStep("Optimizing resume structure...")
       updateProgressSmooth(70)
       
-      const rewriteResult = await rewriteResume(annotateResult["annotated_resume"], controller.signal)
+      const rewriteResult = await rewriteResume(annotateResult["annotated_resume"], resumeMd)
       
       // Calculate final ATS score with the new optimized resume
       setCurrentStep("Calculating final ATS score...")
@@ -475,10 +474,10 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
               Get your resume optimized for ATS systems and significantly improve your match score.
             </p>
             
-            {/* Tips Section */}
+            {/* Additional Info Section */}
             <Collapsible open={isHowToOpen} onOpenChange={setIsHowToOpen}>
               <CollapsibleTrigger className="inline-flex items-center space-x-2 text-[#00FFAA] hover:text-[#00DD99] transition-colors duration-200 mt-4 mb-2">
-                <span className="text-sm font-medium">Tips</span>
+                <span className="text-sm font-medium">Additional Info</span>
                 <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isHowToOpen ? 'rotate-180' : ''}`} />
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-4">

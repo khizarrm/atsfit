@@ -44,13 +44,13 @@ export function LoadingProgress({
       return {
         icon: Brain,
         phase: "Analyzing Resume",
-        message: "AI is analyzing your resume and matching keywords..."
+        message: "Hang tight, this can take up to a minute. We're analyzing your resume and matching keywords..."
       }
     } else if (progress < 90) {
       return {
         icon: Sparkles,
-        phase: "AI Optimization",
-        message: "AI is optimizing your resume for maximum impact..."
+        phase: "Optimizing",
+        message: "Optimizing your resume for maximum impact..."
       }
     } else if (progress < 100) {
       return {

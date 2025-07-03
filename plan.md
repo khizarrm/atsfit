@@ -34,6 +34,8 @@
 - Add attempt counter display
 - Add ChatGPT prompt modal/section
 - Integrate with trial manager
+- **Remove dev skip button completely**
+- **Keep signup button in header for trial users (instead of profile)**
 - Simplified UI without profile features
 
 ### Phase 3: Trial Results View
@@ -94,6 +96,8 @@ interface TryItViewProps {
 - Resume paste textarea (like UploadView)
 - ChatGPT prompt section
 - Attempt limit warnings
+- Header with signup button (no profile option)
+- Remove dev skip button entirely
 ```
 
 ### 3. ChatGPT Prompt Integration
@@ -116,12 +120,12 @@ interface TryItViewProps {
 
 ### New User Journey:
 1. **Landing Page** → Click "Try It Free"
-2. **Try-It View** → See attempt counter (3/3 remaining)
-3. **Paste Resume** → Text area with markdown formatting
+2. **Try-It View** → See attempt counter (3/3 remaining) + signup button in header
+3. **Paste Resume** → Text area with markdown formatting (no dev skip)
 4. **Paste Job Description** → Same as current flow
 5. **Submit** → Decrement attempt counter
 6. **Results** → Simplified results with signup CTA
-7. **Back to Try-It** → Now shows (2/3 remaining)
+7. **Back to Try-It** → Now shows (2/3 remaining) + signup still available
 8. **Repeat** → Until 0 attempts left
 9. **Limit Reached** → Show ChatGPT prompt + signup CTA
 

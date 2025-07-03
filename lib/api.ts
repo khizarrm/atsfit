@@ -1,19 +1,18 @@
 import { HOST_URL } from './variables';
 import { renderMarkdownPreview, generatePDFCSS } from '@/lib/utils/preview-renderer';
 
-export async function annotateResume(resume: string, keywords: string[], jobDescription: string, userNotes: string, abortSignal?: AbortSignal) {
+export async function annotateResume(resume_content: string, job_description: string, keywords: string[], user_notes: string) {
   const res = await fetch(`${HOST_URL}/api/annotate`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      resume_content: resume,
+      resume_content,
       keywords,
-      job_description: jobDescription,
-      user_notes: userNotes
+      job_description,
+      user_notes
     }),
-    signal: abortSignal,
   });
 
   if (!res.ok) {
@@ -28,16 +27,16 @@ export async function annotateResume(resume: string, keywords: string[], jobDesc
   return data;
 }
 
-export async function rewriteResume(annotatedResume: string, abortSignal?: AbortSignal) {
+export async function rewriteResume(suggestions_json: string, resume_md: string) {
   const res = await fetch(`${HOST_URL}/api/rewrite`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      annotated_resume : annotatedResume
+      suggestions_json,
+      resume_md
     }),
-    signal: abortSignal,
   });
 
   if (!res.ok) {

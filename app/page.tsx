@@ -11,6 +11,8 @@ import { DashboardView } from "@/components/dashboard-view"
 import { ResumeSetupView } from "@/components/resume-setup-view"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
+import { TrialProvider } from "@/contexts/trial-context"
+import { TrialResultsView } from "@/components/trial-results-view"
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -99,6 +101,14 @@ export default function ATSFitApp() {
   // Resume optimisation data
   const [uploadedText, setUploadedText] = useState<string | null>(null)
   const [jobDescription, setJobDescription] = useState("")
+  const [trialResumeText, setTrialResumeText] = useState<string | null>(null)
+  const [showTrialResults, setShowTrialResults] = useState(false)
+  const [trialResults, setTrialResults] = useState<{
+    optimizedResume: string
+    initialAtsScore: number
+    finalAtsScore: number
+    missingKeywordsCount: number
+  } | null>(null)
 
   /* ----------------------------- Lifecycle ------------------------------ */
   // No state restoration - always start fresh for predictable behavior
@@ -162,6 +172,26 @@ export default function ATSFitApp() {
   }, [user, goTo])
 
   const handleJobSubmit = useCallback((description: string) => setJobDescription(description), [])
+  
+  const handleTrialJobSubmit = useCallback((description: string, resumeText: string) => {
+    setJobDescription(description)
+    setTrialResumeText(resumeText)
+    // Mock optimization results for trial (in real implementation, call your API)
+    setTimeout(() => {
+      setTrialResults({
+        optimizedResume: `# Optimized Resume\n\n${resumeText}\n\n## Additional optimizations applied:\n- Enhanced keywords for ATS compatibility\n- Improved formatting for better readability\n- Strengthened action verbs and quantified achievements`,
+        initialAtsScore: 65,
+        finalAtsScore: 87,
+        missingKeywordsCount: 3
+      })
+      setShowTrialResults(true)
+    }, 2000)
+  }, [])
+  
+  const handleBackFromTrialResults = useCallback(() => {
+    setShowTrialResults(false)
+    setTrialResults(null)
+  }, [])
 
 
 
@@ -173,9 +203,18 @@ export default function ATSFitApp() {
       case "login":
         return <LoginView onLogin={() => {}} onTryIt={handleTryIt} />
       case "tryit":
-        return (
+        return showTrialResults && trialResults ? (
+          <TrialResultsView
+            optimizedResume={trialResults.optimizedResume}
+            onBack={handleBackFromTrialResults}
+            onSignUp={handleSignUp}
+            initialAtsScore={trialResults.initialAtsScore}
+            finalAtsScore={trialResults.finalAtsScore}
+            missingKeywordsCount={trialResults.missingKeywordsCount}
+          />
+        ) : (
           <TryItView
-            onJobSubmit={handleJobSubmit}
+            onJobSubmit={handleTrialJobSubmit}
             onBack={handleBackToLogin}
             onSignUp={handleSignUp}
             isTrialMode={isTrialMode}
@@ -229,10 +268,18 @@ export default function ATSFitApp() {
     )
   }
   
-  return (
+  // Wrap trial mode in TrialProvider
+  const content = (
     <div className="min-h-screen bg-black relative text-white">
       <BackgroundGlow />
       <AnimatePresence mode="sync">{renderView()}</AnimatePresence>
     </div>
+  )
+  
+  // Only wrap with TrialProvider when in trial mode
+  return isTrialMode ? (
+    <TrialProvider>{content}</TrialProvider>
+  ) : (
+    content
   )
 }
