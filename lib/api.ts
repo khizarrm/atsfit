@@ -102,7 +102,7 @@ export async function extractKeywordsFromJobDescription(jobDescription: string, 
           - Salary or years of experience
           - Generic terms like "strong", "excellent", "good"
 
-          **Return only a JSON array of strings with the final keywords. At the beginning of the Json, include the company name.**`
+          **Return only a JSON array of strings with the final keywords.**`
         },
         {
           role: "user",
