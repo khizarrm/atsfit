@@ -8,10 +8,8 @@ import { LoginView } from "@/components/login-view"
 import { TryItView } from "@/components/try-it-view"
 import { UploadView } from "@/components/upload-view"
 import { DashboardView } from "@/components/dashboard-view"
-import { ResultsView } from "@/components/results-view"
-import { ProfileView } from "@/components/profile-view"
 import { ResumeSetupView } from "@/components/resume-setup-view"
-
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 
 /* -------------------------------------------------------------------------- */
@@ -24,7 +22,6 @@ type AppState =
   | "upload"
   | "resume-setup"
   | "dashboard"
-  | "results"
   | "profile"
 
 interface User {
@@ -98,15 +95,10 @@ export default function ATSFitApp() {
   const [currentState, setCurrentState] = useState<AppState>("login")
   const [user, setUser] = useState<User | null>(null)
   const [isTrialMode, setIsTrialMode] = useState(false)
-
+  const router = useRouter()
   // Resume optimisation data
   const [uploadedText, setUploadedText] = useState<string | null>(null)
   const [jobDescription, setJobDescription] = useState("")
-  const [optimizedResume, setOptimizedResume] = useState("")
-  const [initialAtsScore, setInitialAtsScore] = useState<number | undefined>()
-  const [finalAtsScore, setFinalAtsScore] = useState<number | undefined>()
-  const [missingKeywordsCount, setMissingKeywordsCount] = useState<number | undefined>()
-  const [nextJobUrl, setNextJobUrl] = useState("")
 
   /* ----------------------------- Lifecycle ------------------------------ */
   // No state restoration - always start fresh for predictable behavior
@@ -160,7 +152,6 @@ export default function ATSFitApp() {
     setUser(null)
     setUploadedText(null)
     setJobDescription("")
-    setOptimizedResume("")
     goTo("login")
   }, [goTo])
 
@@ -176,28 +167,15 @@ export default function ATSFitApp() {
     (result: string, initialScore?: number, finalScore?: number, missingKeywordsCount?: number) => {
       if (!result) return console.error("Empty result received")
       console.log("Analysis Complete - Initial Score:", initialScore, "Final Score:", finalScore, "Missing Keywords:", missingKeywordsCount)
-      setOptimizedResume(result)
-      setInitialAtsScore(initialScore)
-      setFinalAtsScore(finalScore)
-      setMissingKeywordsCount(missingKeywordsCount)
-      setNextJobUrl("")
-      goTo("results")
+      
+      // Navigate to results page with query parameters
+      router.push(
+        `/results?resume=${encodeURIComponent(result)}&initial=${initialScore || 0}&final=${finalScore || 0}&missing=${missingKeywordsCount || 0}`
+      )
     },
-    [goTo]
+    [router]
   )
 
-  const handleBackToDashboard = useCallback(() => {
-    user ? goTo("dashboard") : goTo("tryit")
-  }, [user, goTo])
-
-  const handleNextJob = useCallback(
-    (jobUrl: string) => {
-      setNextJobUrl(jobUrl)
-      setJobDescription("")
-      goTo("dashboard")
-    },
-    [goTo]
-  )
 
   const handleSignUp = useCallback(() => goTo("login"), [goTo])
 
@@ -237,27 +215,10 @@ export default function ATSFitApp() {
             onJobSubmit={handleJobSubmit}
             onAnalysisComplete={handleAnalysisComplete}
             onSignUp={handleSignUp}
-            onGoToProfile={() => goTo("profile")}
+            onGoToProfile={() => router.push("/profile")}
             user={user}
           />
         )
-      case "results":
-        return (
-          <ResultsView
-            optimizedResume={optimizedResume}
-            onBack={handleBackToDashboard}
-            onSignUp={handleSignUp}
-            onNextJob={handleNextJob}
-            onGoToProfile={() => goTo("profile")}
-            isTrialMode={isTrialMode}
-            user={user}
-            initialAtsScore={initialAtsScore}
-            finalAtsScore={finalAtsScore}
-            missingKeywordsCount={missingKeywordsCount}
-          />
-        )
-      case "profile":
-        return <ProfileView onBack={() => goTo("dashboard")} user={user} />
       default:
         return null
     }
