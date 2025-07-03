@@ -51,6 +51,8 @@ Format bullet points with a '-'
 
 When returning, ensure you do not modify any content whatsoever. 
 
+Do not add a newline for job titiles and company names: keep both on the same line.
+
 Resume follows below:
 ___________________________________________________________`
 
@@ -142,6 +144,7 @@ ___________________________________________________________`
               <p className="text-gray-300 text-xl mb-2">
                 Generate your resume with ChatGPT and get started with AI-powered optimization
               </p>
+              <p className="text-gray-400 mb-3">I know I could've gotten ChatGPT to do this but this is cheaper and saves me work so bear with me.</p>
               <p className="text-gray-400">Copy the prompt below followed by your resume, paste it into ChatGPT, then paste the result here</p>
             </motion.div>
           </div>
