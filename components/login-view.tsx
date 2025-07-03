@@ -117,7 +117,7 @@ export function LoginView({ onLogin, onTryIt }: LoginViewProps) {
             ATSFit
           </h1>
           <p className="text-gray-300 text-xl mb-2">AI-Powered Resume Optimization</p>
-          <p className="text-gray-400 text-lg">Get your resume past ATS systems with 90+ compatibility scores</p>
+          <p className="text-gray-400 text-lg">Get your resume past ATS systems with intelligent optimization</p>
         </motion.div>
 
         {/* Features Grid */}
@@ -145,9 +145,9 @@ export function LoginView({ onLogin, onTryIt }: LoginViewProps) {
 
           <div className="bg-white/3 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/5 transition-all duration-300">
             <TrendingUp className="w-8 h-8 text-[#00FFAA] mb-4 mx-auto" />
-            <h3 className="text-white font-semibold mb-2">90+ ATS Score</h3>
+            <h3 className="text-white font-semibold mb-2">Try It Free</h3>
             <p className="text-gray-400 text-sm">
-              Achieve industry-leading ATS compatibility scores for better job prospects
+              Free trial uses a basic model. Create an account for more features and our strongest optimization model
             </p>
           </div>
         </motion.div>
