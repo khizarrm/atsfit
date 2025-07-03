@@ -9,29 +9,29 @@ import { annotateResume, rewriteResume, AtsScoreResponse, extractKeywordsFromJob
 import { calculateAtsScore, AtsScoreResult } from "@/lib/utils/ats-scorer"
 import { useAuth } from "@/contexts/auth-context"
 import { LoadingProgress } from "@/components/LoadingProgress"
+import { type ResultsData } from "@/lib/utils/results-validation"
+import { ResultsView } from "@/components/results-view"
 import { SharedHeader } from "@/components/shared-header"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
 interface DashboardViewProps {
-  onJobSubmit: (description: string) => void
-  onAnalysisComplete: (result: string, initialAtsScore?: number, finalAtsScore?: number, missingKeywordsCount?: number) => void
   onSignUp: () => void
   onGoToProfile: () => void
   user: any | null
 }
 
-export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoToProfile, user }: DashboardViewProps) {
+export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewProps) {
   const { resumeMd } = useAuth()
   const [jobDescription, setJobDescription] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
-  const [buttonText, setButtonText] = useState("Start AI Optimization")
+  const [buttonText] = useState("Start AI Optimization")
   const [progress, setProgress] = useState(0)
   const [currentStep, setCurrentStep] = useState("")
   const [abortController, setAbortController] = useState<AbortController | null>(null)
   const [apiCheckpoints, setApiCheckpoints] = useState({ step1: false, step2: false, step3: false })
-  const [atsScoreData, setAtsScoreData] = useState<AtsScoreResponse | null>(null)
-  const [initialAtsScore, setInitialAtsScore] = useState<number | null>(null)
+  const [atsScoreData] = useState<AtsScoreResponse | null>(null)
+  const [initialAtsScore] = useState<number | null>(null)
   const [annotationData, setAnnotationData] = useState<any>(null)
   const [atsLoading, setAtsLoading] = useState(false)
   const [annotationLoading, setAnnotationLoading] = useState(false)
@@ -40,6 +40,20 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
   const [keywordsError, setKeywordsError] = useState("")
   const [currentAtsResult, setCurrentAtsResult] = useState<AtsScoreResult | null>(null)
   const [userNotes, setUserNotes] = useState("")
+  
+  // Post-completion state
+  const [optimizationComplete, setOptimizationComplete] = useState(false)
+  const [resultsData, setResultsData] = useState<ResultsData | null>(null)
+  const [preValidationError, setPreValidationError] = useState<string | null>(null)
+  
+  // Results display state
+  const [showResults, setShowResults] = useState(false)
+  const [optimizationResults, setOptimizationResults] = useState<{
+    optimizedResume: string
+    initialAtsScore: number
+    finalAtsScore: number
+    missingKeywordsCount: number
+  } | null>(null)
   const [editingKeywordIndex, setEditingKeywordIndex] = useState<number | null>(null)
   const [editingKeywordValue, setEditingKeywordValue] = useState("")
   const [storedInitialAtsScore, setStoredInitialAtsScore] = useState<number | null>(null)
@@ -73,6 +87,36 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
     }, 50) // Smooth 50ms intervals
     
     setProgressInterval(interval)
+  }
+
+  // Post-completion handler for seamless transition
+  const handlePostCompletion = async (data: ResultsData) => {
+    try {
+      setOptimizationComplete(true)
+      setResultsData(data)
+      setPreValidationError(null)
+      
+      // Simple progress simulation since we're not doing URL validation anymore
+      setCurrentStep("Finalizing results...")
+      updateProgressSmooth(110)
+      
+      // Small delay for visual continuity, then show results
+      setTimeout(() => {
+        setOptimizationResults({
+          optimizedResume: data.resume,
+          initialAtsScore: data.initialScore,
+          finalAtsScore: data.finalScore,
+          missingKeywordsCount: data.missingKeywords
+        })
+        setShowResults(true)
+        setIsSubmitting(false)
+      }, 800)
+      
+    } catch (error) {
+      console.error('Post-completion failed:', error)
+      setPreValidationError(error instanceof Error ? error.message : 'Failed to show results')
+      setOptimizationComplete(false)
+    }
   }
 
   const handleSubmit = async () => {
@@ -115,13 +159,14 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
       
       // Use only missing keywords for annotation
       const annotateResult = await annotateResume(
+        resumeMd,
         missingKeywords, 
         jobDescription, 
         userNotes.trim() || "The user didn't provide any notes, ignore this", 
         controller.signal
       )
+      console.log("Annotated Resume: ", annotateResult)
       setAnnotationData(annotateResult)
-      console.log("Annotation completed:", annotateResult)
       
       // Complete step 1
       updateProgressSmooth(50)
@@ -132,7 +177,7 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
       setCurrentStep("Optimizing resume structure...")
       updateProgressSmooth(70)
       
-      const rewriteResult = await rewriteResume(controller.signal)
+      const rewriteResult = await rewriteResume(annotateResult["annotated_resume"], controller.signal)
       
       // Calculate final ATS score with the new optimized resume
       setCurrentStep("Calculating final ATS score...")
@@ -151,13 +196,18 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
         finalAtsScore = finalAtsResult.score
       }
       
-      // Complete optimization
+      // Complete optimization  
       updateProgressSmooth(100)
       setApiCheckpoints(prev => ({ ...prev, step2: true }))
-      
-      // Complete
       setCurrentStep("Optimization complete!")
-      onAnalysisComplete(optimizedResume, initialScore ?? undefined, finalAtsScore, missingKeywordsCount)
+      
+      // Start post-completion phase
+      await handlePostCompletion({
+        resume: optimizedResume,
+        initialScore: initialScore ?? 0,
+        finalScore: finalAtsScore ?? 0,
+        missingKeywords: missingKeywordsCount
+      })
       
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
@@ -354,6 +404,48 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
     )
   }
 
+  // Handle back navigation from results
+  const handleBackFromResults = () => {
+    setShowResults(false)
+    setOptimizationResults(null)
+    setOptimizationComplete(false)
+    setProgress(0)
+    setCurrentStep("")
+  }
+
+  // Handle next job from results
+  const handleNextJob = (jobUrl: string) => {
+    if (jobUrl) {
+      sessionStorage.setItem('nextJobUrl', jobUrl)
+    }
+    handleBackFromResults()
+  }
+
+  // Map user to expected interface for ResultsView
+  const mappedUser = user ? {
+    id: user.id,
+    email: user.email!,
+    name: user.user_metadata?.full_name || user.email!,
+  } : null
+
+  // Show results view if optimization is complete
+  if (showResults && optimizationResults) {
+    return (
+      <ResultsView
+        optimizedResume={optimizationResults.optimizedResume}
+        onBack={handleBackFromResults}
+        onSignUp={onSignUp}
+        onNextJob={handleNextJob}
+        onGoToProfile={onGoToProfile}
+        isTrialMode={!user}
+        user={mappedUser}
+        initialAtsScore={optimizationResults.initialAtsScore}
+        finalAtsScore={optimizationResults.finalAtsScore}
+        missingKeywordsCount={optimizationResults.missingKeywordsCount}
+      />
+    )
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 50 }}
@@ -429,6 +521,9 @@ export function DashboardView({ onJobSubmit, onAnalysisComplete, onSignUp, onGoT
               progress={progress}
               currentStep={currentStep}
               onCancel={handleCancel}
+              optimizationComplete={optimizationComplete}
+              resultsData={resultsData ?? undefined}
+              error={preValidationError}
               atsScoreData={atsScoreData}
               atsLoading={atsLoading}
               annotationLoading={annotationLoading}

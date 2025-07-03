@@ -1,13 +1,14 @@
 import { HOST_URL } from './variables';
 import { renderMarkdownPreview, generatePDFCSS } from '@/lib/utils/preview-renderer';
 
-export async function annotateResume(keywords: string[], jobDescription: string, userNotes: string, abortSignal?: AbortSignal) {
+export async function annotateResume(resume: string, keywords: string[], jobDescription: string, userNotes: string, abortSignal?: AbortSignal) {
   const res = await fetch(`${HOST_URL}/api/annotate`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
+      resume_content: resume,
       keywords,
       job_description: jobDescription,
       user_notes: userNotes
@@ -27,12 +28,15 @@ export async function annotateResume(keywords: string[], jobDescription: string,
   return data;
 }
 
-export async function rewriteResume(abortSignal?: AbortSignal) {
+export async function rewriteResume(annotatedResume: string, abortSignal?: AbortSignal) {
   const res = await fetch(`${HOST_URL}/api/rewrite`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
+    body: JSON.stringify({
+      annotated_resume : annotatedResume
+    }),
     signal: abortSignal,
   });
 
@@ -264,3 +268,4 @@ export async function generatePDF(
     };
   }
 }
+

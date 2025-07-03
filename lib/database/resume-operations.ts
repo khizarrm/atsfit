@@ -71,7 +71,7 @@ export async function saveUserResume(userId: string, resumeMd: string): Promise<
 
     console.log('userId:', userId, 'typeof:', typeof userId)
 
-    // Use upsert to insert or update based on unique user_id constraint
+    // Save to Supabase database
     const { data, error } = await supabase
       .from('resumes')
       .upsert({
@@ -81,18 +81,18 @@ export async function saveUserResume(userId: string, resumeMd: string): Promise<
       }, { onConflict: 'user_id' })
       .select();
 
-    console.log('Upsert result:', { data, error })
+    console.log('Database save result:', { data, error })
 
     if (error) {
-      console.error('Error saving user resume:', error)
+      console.error('Database save failed:', error)
       return {
-        error: 'Failed to save resume',
+        error: 'Failed to save resume to database',
         success: false
       }
     }
 
     return {
-      data,
+      data: data?.[0] || null,
       success: true
     }
   } catch (error) {

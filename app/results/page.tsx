@@ -79,9 +79,66 @@ function ResultsPageContent() {
 
   useEffect(() => {
     if (!authLoading) {
-      parseAndValidateParams()
+      const isPreValidated = searchParams.get('validated') === 'true'
+      if (isPreValidated) {
+        // Skip validation, parse immediately for pre-validated data
+        parseValidatedParams()
+      } else {
+        // Full validation (fallback for direct access)
+        parseAndValidateParams()
+      }
     }
   }, [authLoading, searchParams])
+
+  const parseValidatedParams = () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+
+      // Get query parameters (minimal validation for pre-validated data)
+      const resumeKey = searchParams.get('resumeKey')
+      const initial = searchParams.get('initial')
+      const final = searchParams.get('final')
+      const missing = searchParams.get('missing')
+
+      if (!resumeKey || !initial || !final || !missing) {
+        // Fallback to full validation if parameters are missing
+        parseAndValidateParams()
+        return
+      }
+
+      // Get resume from sessionStorage
+      const storedResume = sessionStorage.getItem(resumeKey)
+      if (!storedResume) {
+        // Fallback to full validation if resume not found in storage
+        parseAndValidateParams()
+        return
+      }
+
+      // Simplified parsing for pre-validated data
+      const initialScore = parseFloat(initial)
+      const finalScore = parseFloat(final)
+      const missingKeywords = parseInt(missing, 10)
+
+      // Set validated data immediately
+      setResultsData({
+        optimizedResume: storedResume,
+        initialAtsScore: initialScore,
+        finalAtsScore: finalScore,
+        missingKeywordsCount: missingKeywords
+      })
+      
+      // Clean up the sessionStorage after successful loading
+      sessionStorage.removeItem(resumeKey)
+      
+      setIsLoading(false)
+      
+    } catch (error) {
+      console.error('Error parsing pre-validated params:', error)
+      // Fallback to full validation
+      parseAndValidateParams()
+    }
+  }
 
   const parseAndValidateParams = () => {
     try {

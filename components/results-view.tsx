@@ -212,8 +212,8 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
           </div>
         }
         rightContent={
-          <div className="flex items-center space-x-4 w-48 justify-end"> {/* Fixed width for centering */}
-            {isTrialMode && (
+          isTrialMode ? (
+            <div className="flex items-center space-x-4 w-48 justify-end"> {/* Fixed width for centering */}
               <Button
                 onClick={onSignUp}
                 className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-semibold px-4 py-2 text-sm rounded-xl transition-all duration-300 hover:scale-105"
@@ -221,13 +221,8 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                 <Crown className="mr-1 h-4 w-4" />
                 Upgrade Now
               </Button>
-            )}
-            {user && (
-              <div className="relative">
-                {/* Profile dropdown will be handled by SharedHeader automatically */}
-              </div>
-            )}
-          </div>
+            </div>
+          ) : undefined
         }
         onGoToProfile={onGoToProfile}
         onSignUp={onSignUp}

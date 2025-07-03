@@ -163,18 +163,6 @@ export default function ATSFitApp() {
 
   const handleJobSubmit = useCallback((description: string) => setJobDescription(description), [])
 
-  const handleAnalysisComplete = useCallback(
-    (result: string, initialScore?: number, finalScore?: number, missingKeywordsCount?: number) => {
-      if (!result) return console.error("Empty result received")
-      console.log("Analysis Complete - Initial Score:", initialScore, "Final Score:", finalScore, "Missing Keywords:", missingKeywordsCount)
-      
-      // Navigate to results page with query parameters
-      router.push(
-        `/results?resume=${encodeURIComponent(result)}&initial=${initialScore || 0}&final=${finalScore || 0}&missing=${missingKeywordsCount || 0}`
-      )
-    },
-    [router]
-  )
 
 
   const handleSignUp = useCallback(() => goTo("login"), [goTo])
@@ -212,8 +200,6 @@ export default function ATSFitApp() {
       case "dashboard":
         return (
           <DashboardView
-            onJobSubmit={handleJobSubmit}
-            onAnalysisComplete={handleAnalysisComplete}
             onSignUp={handleSignUp}
             onGoToProfile={() => router.push("/profile")}
             user={user}
