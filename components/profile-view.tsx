@@ -265,9 +265,9 @@ phone • email • website • github
         font-size: 14px;
         line-height: 1.2;
         color: #111;
-        background-color: #f5f5f5;
+        background-color: white;
         margin: 0;
-        padding: 40px;
+        padding: 0;
         display: flex;
         justify-content: center;
         min-height: 100vh;
@@ -278,8 +278,24 @@ phone • email • website • github
         width: 8.5in;
         min-height: 11in;
         padding: 0.5in;
-        box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        border-radius: 8px;
+        margin: 0;
+      }
+      
+      @media print {
+        body {
+          background-color: white;
+          padding: 0;
+          margin: 0;
+        }
+        
+        .resume-container {
+          width: 100%;
+          min-height: auto;
+          padding: 0.5in;
+          margin: 0;
+          box-shadow: none;
+          border-radius: 0;
+        }
       }
       
       h1 { font-size: 1.8em; text-align: center; margin-bottom: 0.1rem; font-weight: 700; color: #111; }

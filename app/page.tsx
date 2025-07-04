@@ -5,14 +5,11 @@ import { motion, AnimatePresence } from "framer-motion"
 
 // Views
 import { LoginView } from "@/components/login-view"
-import { TryItView } from "@/components/try-it-view"
-import { UploadView } from "@/components/upload-view"
 import { DashboardView } from "@/components/dashboard-view"
 import { ResumeSetupView } from "@/components/resume-setup-view"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
-import { TrialProvider } from "@/contexts/trial-context"
-import { TrialResultsView } from "@/components/trial-results-view"
+import { ResultsView } from "@/components/results-view"
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -20,11 +17,9 @@ import { TrialResultsView } from "@/components/trial-results-view"
 
 type AppState =
   | "login"
-  | "tryit"
-  | "upload"
-  | "resume-setup"
   | "dashboard"
   | "profile"
+  | "results"
 
 interface User {
   id: string
@@ -96,19 +91,7 @@ export default function ATSFitApp() {
   /* ------------------------------- State --------------------------------- */
   const [currentState, setCurrentState] = useState<AppState>("login")
   const [user, setUser] = useState<User | null>(null)
-  const [isTrialMode, setIsTrialMode] = useState(false)
   const router = useRouter()
-  // Resume optimisation data
-  const [uploadedText, setUploadedText] = useState<string | null>(null)
-  const [jobDescription, setJobDescription] = useState("")
-  const [trialResumeText, setTrialResumeText] = useState<string | null>(null)
-  const [showTrialResults, setShowTrialResults] = useState(false)
-  const [trialResults, setTrialResults] = useState<{
-    optimizedResume: string
-    initialAtsScore: number
-    finalAtsScore: number
-    missingKeywordsCount: number
-  } | null>(null)
 
   /* ----------------------------- Lifecycle ------------------------------ */
   // No state restoration - always start fresh for predictable behavior
@@ -126,7 +109,6 @@ export default function ATSFitApp() {
           name: authUser.user_metadata?.full_name || authUser.email!,
         }
         setUser(userData)
-        setIsTrialMode(false)
         
         // Check AuthContext for resume data to route appropriately
         if (hasResume) {
@@ -134,113 +116,43 @@ export default function ATSFitApp() {
           setCurrentState("dashboard")
         } else {
           console.log("No resume found, redirecting to setup")
-          setCurrentState("resume-setup")
+          setCurrentState("dashboard")
         }
       } else {
         // User is logged out
         setUser(null)
-        if (!isTrialMode) {
-          setCurrentState("login")
-        }
+        setCurrentState("login")
       }
     }
-  }, [authUser, authLoading, hasResume, isTrialMode])
+  }, [authUser, authLoading, hasResume])
 
   // No state persistence - let users navigate naturally without memory
 
   /* ------------------------------ Handlers ------------------------------ */
   const goTo = useCallback((state: AppState) => setCurrentState(state), [])
 
-  const handleTryIt = useCallback(() => {
-    setIsTrialMode(true)
-    setUser(null)
-    goTo("tryit")
-  }, [goTo])
-
-  const handleBackToLogin = useCallback(() => {
-    setIsTrialMode(false)
-    setUser(null)
-    setUploadedText(null)
-    setJobDescription("")
-    goTo("login")
-  }, [goTo])
-
-  const handleTextSubmit = useCallback((text: string) => setUploadedText(text), [])
-
-  const handleConfirmUpload = useCallback(() => {
-    user ? goTo("dashboard") : goTo("login")
-  }, [user, goTo])
-
-  const handleJobSubmit = useCallback((description: string) => setJobDescription(description), [])
-  
-  const handleTrialJobSubmit = useCallback((description: string, resumeText: string) => {
-    setJobDescription(description)
-    setTrialResumeText(resumeText)
-    // Mock optimization results for trial (in real implementation, call your API)
-    setTimeout(() => {
-      setTrialResults({
-        optimizedResume: `# Optimized Resume\n\n${resumeText}\n\n## Additional optimizations applied:\n- Enhanced keywords for ATS compatibility\n- Improved formatting for better readability\n- Strengthened action verbs and quantified achievements`,
-        initialAtsScore: 65,
-        finalAtsScore: 87,
-        missingKeywordsCount: 3
-      })
-      setShowTrialResults(true)
-    }, 2000)
+  const handleLogin = useCallback((user: User) => {
+    setUser(user)
+    setCurrentState("dashboard")
   }, [])
-  
-  const handleBackFromTrialResults = useCallback(() => {
-    setShowTrialResults(false)
-    setTrialResults(null)
-  }, [])
-
-
-
-  const handleSignUp = useCallback(() => goTo("login"), [goTo])
 
   /* ---------------------------- View Factory ---------------------------- */
   const renderView = () => {
     switch (currentState) {
       case "login":
-        return <LoginView onLogin={() => {}} onTryIt={handleTryIt} />
-      case "tryit":
-        return showTrialResults && trialResults ? (
-          <TrialResultsView
-            optimizedResume={trialResults.optimizedResume}
-            onBack={handleBackFromTrialResults}
-            onSignUp={handleSignUp}
-            initialAtsScore={trialResults.initialAtsScore}
-            finalAtsScore={trialResults.finalAtsScore}
-            missingKeywordsCount={trialResults.missingKeywordsCount}
-          />
-        ) : (
-          <TryItView
-            onJobSubmit={handleTrialJobSubmit}
-            onBack={handleBackToLogin}
-            onSignUp={handleSignUp}
-            isTrialMode={isTrialMode}
-          />
-        )
-      case "upload":
-        return (
-          <UploadView
-            onTextSubmit={handleTextSubmit}
-            onConfirm={handleConfirmUpload}
-            uploadedText={uploadedText}
-          />
-        )
-      case "resume-setup":
-        return (
-          <ResumeSetupView
-            onComplete={() => goTo("dashboard")}
-            onSkip={() => goTo("dashboard")}
-            user={user}
-          />
-        )
+        return <LoginView onLogin={handleLogin} />
       case "dashboard":
         return (
           <DashboardView
-            onSignUp={handleSignUp}
             onGoToProfile={() => router.push("/profile")}
+            onGoToResults={() => goTo("results")}
+            user={user}
+          />
+        )
+      case "results":
+        return (
+          <ResultsView
+            onBack={() => goTo("dashboard")}
             user={user}
           />
         )
@@ -268,18 +180,10 @@ export default function ATSFitApp() {
     )
   }
   
-  // Wrap trial mode in TrialProvider
-  const content = (
+  return (
     <div className="min-h-screen bg-black relative text-white">
       <BackgroundGlow />
       <AnimatePresence mode="sync">{renderView()}</AnimatePresence>
     </div>
-  )
-  
-  // Only wrap with TrialProvider when in trial mode
-  return isTrialMode ? (
-    <TrialProvider>{content}</TrialProvider>
-  ) : (
-    content
   )
 }

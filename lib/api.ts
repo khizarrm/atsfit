@@ -218,7 +218,7 @@ export async function generatePDF(
     }
 
     const result = await res.json();
-
+    console.log("Result is: ", result)
     if (!result.success) {
       throw new Error(result.error || 'PDF generation failed');
     }
@@ -226,6 +226,7 @@ export async function generatePDF(
     if (!result.data) {
       throw new Error('No PDF data received from server');
     }
+
 
     // Convert base64 to blob and download
     const byteCharacters = atob(result.data);

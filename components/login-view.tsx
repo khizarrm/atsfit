@@ -11,10 +11,9 @@ import { useAuth } from "@/contexts/auth-context"
 
 interface LoginViewProps {
   onLogin: () => void
-  onTryIt: () => void
 }
 
-export function LoginView({ onLogin, onTryIt }: LoginViewProps) {
+export function LoginView({ onLogin }: LoginViewProps) {
   const [showSignup, setShowSignup] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
   const [email, setEmail] = useState("")
@@ -145,9 +144,9 @@ export function LoginView({ onLogin, onTryIt }: LoginViewProps) {
 
           <div className="bg-white/3 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/5 transition-all duration-300">
             <TrendingUp className="w-8 h-8 text-[#00FFAA] mb-4 mx-auto" />
-            <h3 className="text-white font-semibold mb-2">Try It Free</h3>
+            <h3 className="text-white font-semibold mb-2">Full Access</h3>
             <p className="text-gray-400 text-sm">
-              Free trial uses a basic model. Create an account for more features and our strongest optimization model
+              Create your free account to access all features and our strongest optimization model
             </p>
           </div>
         </motion.div>
@@ -187,24 +186,16 @@ export function LoginView({ onLogin, onTryIt }: LoginViewProps) {
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
           <Button
-            onClick={onTryIt}
-            className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-bold px-8 py-6 text-lg rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(0,255,170,0.4)] shadow-[0_0_20px_rgba(0,255,170,0.2)]"
-          >
-            <Zap className="mr-3 h-5 w-5" />
-            Try It Free
-          </Button>
-
-          <Button
             onClick={() => {
               setShowSignup(true)
               setEmail("")
               setPassword("")
               setError("")
             }}
-            className="bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white font-semibold px-8 py-6 text-lg rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(0,255,170,0.3)]"
+            className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-bold px-8 py-6 text-lg rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(0,255,170,0.4)] shadow-[0_0_20px_rgba(0,255,170,0.2)]"
           >
             <UserPlus className="mr-3 h-5 w-5" />
-            Create Account
+            Get Started Free
           </Button>
 
         </motion.div>
@@ -215,7 +206,7 @@ export function LoginView({ onLogin, onTryIt }: LoginViewProps) {
           transition={{ delay: 1.2 }}
           className="text-gray-500 text-sm mt-4"
         >
-          No signup required to try • Full features with account
+          Create your free account to start optimizing resumes
         </motion.p>
       </motion.div>
 
