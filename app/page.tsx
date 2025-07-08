@@ -4,12 +4,10 @@ import { useState, useEffect, useCallback, Suspense, lazy } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 
 // Views
-import { LoginView } from "@/components/login-view"
 import { DashboardView } from "@/components/dashboard-view"
 import { ResumeSetupView } from "@/components/resume-setup-view"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
-import { ResultsView } from "@/components/results-view"
 
 // Lazy load BackgroundGlow for better performance
 const BackgroundGlow = lazy(() => import('./BackgroundGlow'))
@@ -19,10 +17,8 @@ const BackgroundGlow = lazy(() => import('./BackgroundGlow'))
 /* -------------------------------------------------------------------------- */
 
 type AppState =
-  | "login"
   | "dashboard"
   | "profile"
-  | "results"
   | "resume-setup"
 
 interface User {
@@ -47,13 +43,9 @@ function BackgroundFallback() {
   )
 }
 
-/* -------------------------------------------------------------------------- */
-/*                                Main App                                    */
-/* -------------------------------------------------------------------------- */
-
 export default function ATSFitApp() {
   /* ------------------------------- State --------------------------------- */
-  const [currentState, setCurrentState] = useState<AppState>("login")
+  const [currentState, setCurrentState] = useState<AppState>("dashboard")
   const [user, setUser] = useState<User | null>(null)
   const [hasInitialized, setHasInitialized] = useState(false)
   const router = useRouter()
@@ -65,6 +57,15 @@ export default function ATSFitApp() {
   const { user: authUser, loading: authLoading, hasResume } = useAuth()
   
   useEffect(() => {
+    // 🔍 DEBUG: Print all auth state
+    console.log("🔍 AUTH DEBUG:", {
+      authUser: authUser ? { id: authUser.id, email: authUser.email } : null,
+      authLoading,
+      hasResume,
+      hasInitialized,
+      currentState
+    })
+
     // Initialize immediately if we have auth data, regardless of loading state
     if (authUser && !hasInitialized) {
       const userData = {
@@ -76,36 +77,31 @@ export default function ATSFitApp() {
       
       // Check AuthContext for resume data to route appropriately
       if (hasResume) {
-        console.log("Resume found, going to dashboard")
+        console.log("✅ Resume found, going to dashboard")
         setCurrentState("dashboard")
       } else {
-        console.log("No resume found, redirecting to setup")
+        console.log("❌ No resume found, redirecting to setup")
         setCurrentState("resume-setup")
       }
       setHasInitialized(true)
     } else if (!authUser && !authLoading && !hasInitialized) {
       // Only set login state if we're definitely not loading and have no user
+      console.log("🚫 No auth user, redirecting to login")
       setUser(null)
-      setCurrentState("login")
+      router.push("/login")
       setHasInitialized(true)
     }
-  }, [authUser, authLoading, hasResume, hasInitialized])
+  }, [authUser, authLoading, hasResume, hasInitialized, currentState])
 
   // No state persistence - let users navigate naturally without memory
 
   /* ------------------------------ Handlers ------------------------------ */
   const goTo = useCallback((state: AppState) => setCurrentState(state), [])
 
-  const handleLogin = useCallback((user: User) => {
-    setUser(user)
-    setCurrentState("dashboard")
-  }, [])
 
   /* ---------------------------- View Factory ---------------------------- */
   const renderView = () => {
     switch (currentState) {
-      case "login":
-        return <LoginView onLogin={handleLogin} />
       case "resume-setup":
         return (
           <ResumeSetupView
@@ -117,15 +113,8 @@ export default function ATSFitApp() {
       case "dashboard":
         return (
           <DashboardView
+            onSignUp={() => router.push("/login")}
             onGoToProfile={() => router.push("/profile")}
-            onGoToResults={() => goTo("results")}
-            user={user}
-          />
-        )
-      case "results":
-        return (
-          <ResultsView
-            onBack={() => goTo("dashboard")}
             user={user}
           />
         )
