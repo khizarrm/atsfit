@@ -77,6 +77,7 @@ export async function saveUserResume(userId: string, resumeMd: string): Promise<
       .upsert({
         user_id: userId,
         resume_md: resumeMd,
+        hasResume: true,
         created_at: new Date().toISOString()
       }, { onConflict: 'user_id' })
       .select();
@@ -119,6 +120,16 @@ export async function saveUserResume(userId: string, resumeMd: string): Promise<
  */
 export async function deleteUserResume(userId: string): Promise<{ success: boolean; error?: string }> {
   try {
+    // First update the hasResume column to false, then delete
+    const { error: updateError } = await supabase
+      .from('resumes')
+      .update({ hasResume: false })
+      .eq('user_id', userId)
+
+    if (updateError) {
+      console.error('Error updating resume hasResume field:', updateError)
+    }
+
     const { error } = await supabase
       .from('resumes')
       .delete()

@@ -1,78 +1,100 @@
-# Page Structure Refactoring Plan
+# Sign-In UX Issues - Analysis & Fix Plan
 
-## Current Problem
-The app currently uses a single page with view switching via state management. We need to restructure to use proper Next.js pages routing, starting with moving the resume setup view to its own page.
+## Problem Analysis
 
-## Requirements Understanding
-- Convert from view-based state management to Next.js page routing
-- Create separate page for resume setup view
-- Maintain authentication flow but use proper routing
-- Keep login page as default for unauthenticated users
+After investigating the current sign-in implementation in `/app/login/page.tsx`, `/contexts/auth-context.tsx`, and `/app/page.tsx`, I've identified the real issue:
 
-## Current Architecture Analysis
-After reviewing the code, I can see:
-- `app/page.tsx` uses state management with `renderView()` function
-- Components: `DashboardView`, `ResumeSetupView`, `LoginPage`
-- `app/login/page.tsx` exists as separate page
-- `contexts/auth-context.tsx` manages authentication state
-- Currently using `currentState` to switch between views
+### Root Cause: Navigation Flow Issue
+- **Sign-in works correctly** - authentication succeeds
+- **The problem is post-sign-in navigation** - user doesn't see immediate redirect
+- **Complex initialization logic** in `app/page.tsx` causes delays in state updates
+- **Router redirect happens** but user experience feels broken
 
-## Step-by-Step Approach
+### What Actually Happens:
+1. User clicks sign-in → loading starts
+2. Sign-in succeeds → auth context updates  
+3. Login page calls `router.push("/")` (line 111)
+4. Main page's `useEffect` has complex `hasInitialized` logic (lines 58-92)
+5. User sees loading stop but no visual feedback of successful navigation
+6. Page refresh shows dashboard because auth state is persistent
 
-### 1. Create Resume Setup Page
-- Create `app/resume-setup/page.tsx` 
-- Move `ResumeSetupView` component logic to this new page
-- Update navigation to use `router.push()` instead of state changes
+### 3. Current Implementation Status
+- ✅ Sign-in authentication works correctly
+- ✅ Loading states are implemented 
+- ✅ Error handling exists
+- ❌ Post-sign-in navigation feels broken
+- ❌ No immediate visual feedback after successful sign-in
+- ❌ Complex initialization state management causes delays
 
-### 2. Update Main App Routing Logic
-- Modify `app/page.tsx` to handle routing instead of view switching
-- Remove `renderView()` function and state-based navigation
-- Use Next.js router for navigation between pages
+### 3. Current Implementation Status
+- ✅ Loading states are implemented (lines 67, 330-343, 442-451)
+- ✅ Error handling exists (lines 81-82, 108-109)
+- ✅ Form validation prevents empty submissions
+- ❌ Loading feedback is not prominent enough
+- ❌ No timeout handling
+- ❌ Shared loading state between signup/login
 
-### 3. Update Authentication Flow
-- Keep login page as default in main app
-- Navigate to `/resume-setup` when user has no resume
-- Navigate to `/dashboard` (or stay on main page) when user has resume
-- Handle logout to return to login page
+## Proposed Solutions
 
-### 4. Update Component Navigation
-- Update `ResumeSetupView` callbacks to use router navigation
-- Update `DashboardView` callbacks to use router navigation
-- Remove state-based navigation from components
+### Phase 1: Fix Navigation Flow (Root Cause)
+1. **Simplify main page initialization** - remove complex `hasInitialized` logic
+2. **Add immediate navigation feedback** - show "Redirecting..." state
+3. **Improve auth state handling** - make navigation more predictable
+4. **Add loading persistence** - keep loading state during navigation
 
-### 5. Test the New Flow
-- Test initial page load shows login page
-- Test successful login navigates to appropriate page
-- Test resume setup completion navigates to dashboard
-- Test navigation between pages works correctly
+### Phase 2: Enhance User Experience  
+1. **Add post-sign-in loading state** - show "Signing you in..." message
+2. **Improve navigation timing** - ensure smooth transition
+3. **Add error boundaries** - handle navigation failures gracefully
+4. **Better state synchronization** - align auth context with page state
 
-## Files to be Created/Modified
+## Implementation Plan
 
-### New Files
-- `app/resume-setup/page.tsx` - New page for resume setup functionality
+### Step 1: Fix Navigation Flow (Primary Issue)
+- Add "Redirecting..." state to login page after successful sign-in
+- Simplify main page initialization logic in `app/page.tsx`
+- Remove complex `hasInitialized` dependencies that cause delays
+- Ensure smooth transition from login to dashboard
 
-### Modified Files
-- `app/page.tsx` - Remove state-based view switching, add router-based navigation
-- `components/resume-setup-view.tsx` - Update callbacks to use router navigation
-- `components/dashboard-view.tsx` - Update callbacks to use router navigation
+### Step 2: Improve Loading Experience
+- Keep loading state visible during navigation
+- Add better loading messages ("Signing you in...", "Redirecting...")
+- Ensure loading state persists until page fully transitions
+- Add fallback handling for slow redirects
 
-### No Changes Needed
-- `app/login/page.tsx` - Already structured as separate page
-- `contexts/auth-context.tsx` - Auth logic remains solid
+### Step 3: Test & Debug
+- Test sign-in flow thoroughly
+- Verify immediate navigation feedback
+- Test with slow networks
+- Ensure auth state synchronization
 
-## Key Implementation Details
-- Create dedicated `/resume-setup` page route
-- Update authentication flow to use `router.push()` instead of `setState()`
-- Remove `currentState` management from main app
-- Update component callbacks to navigate between pages
-- Maintain login page as default for unauthenticated users
+## Files to Modify
+- `/app/login/page.tsx` - Add "Redirecting..." state after successful sign-in
+- `/app/page.tsx` - Simplify initialization logic, fix navigation flow
+- `/contexts/auth-context.tsx` - (if needed for state synchronization)
 
-## Expected Behavior After Changes
-1. Page loads → Shows login page immediately
-2. Auth check happens in background
-3. If authenticated but no resume → Navigates to `/resume-setup`
-4. If authenticated with resume → Shows dashboard (stays on main page)
-5. If not authenticated → User stays on login page
-6. Resume setup completion → Navigates back to `/` (dashboard)
+## Testing Plan
+- Test with slow network connection
+- Test with invalid credentials
+- Test with missing environment variables
+- Test signup vs login loading states
+- Test error scenarios and recovery
 
-This approach uses proper Next.js routing while maintaining the existing authentication flow.
+## Assumptions
+- Supabase is properly configured
+- Environment variables are set correctly
+- User has valid network connection
+- Database is accessible
+
+## Risk Assessment
+- **Low risk**: Loading UX improvements
+- **Medium risk**: Timeout handling changes
+- **Low risk**: Error message improvements
+- **Low risk**: Debug logging additions
+
+## Success Criteria
+- Users see immediate navigation feedback after successful sign-in
+- Sign-in flow feels smooth and responsive (no hanging loading states)
+- Users are redirected to dashboard immediately after authentication
+- No need to refresh page to see dashboard
+- Loading states provide clear feedback throughout the process

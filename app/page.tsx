@@ -46,12 +46,9 @@ export default function ATSFitApp() {
   /* ------------------------------- State --------------------------------- */
   const [currentState, setCurrentState] = useState<AppState>("login")
   const [user, setUser] = useState<User | null>(null)
-  const [hasInitialized, setHasInitialized] = useState(false)
   const router = useRouter()
 
   /* ----------------------------- Lifecycle ------------------------------ */
-  // No state restoration - always start fresh for predictable behavior
-
   // Handle auth state changes using AuthContext data
   const { user: authUser, loading: authLoading, hasResume } = useAuth()
   
@@ -60,12 +57,13 @@ export default function ATSFitApp() {
       authUser: authUser ? { id: authUser.id, email: authUser.email } : null,
       authLoading,
       hasResume,
-      hasInitialized,
       currentState
     })
 
-    // Initialize immediately if we have auth data, regardless of loading state
-    if (authUser && !hasInitialized) {
+    // Wait for auth to finish loading before making decisions
+    if (authLoading) return
+
+    if (authUser) {
       const userData = {
         id: authUser.id,
         email: authUser.email!,
@@ -81,15 +79,13 @@ export default function ATSFitApp() {
         console.log("❌ No resume found, redirecting to setup")
         router.push("/resume-setup")
       }
-      setHasInitialized(true)
-    } else if (!authUser && !authLoading && !hasInitialized) {
-      // Only set login state if we're definitely not loading and have no user
+    } else {
+      // No auth user, stay on login page
       console.log("🚫 No auth user, staying on login page")
       setUser(null)
       setCurrentState("login")
-      setHasInitialized(true)
     }
-  }, [authUser, authLoading, hasResume, hasInitialized, router])
+  }, [authUser, authLoading, hasResume, router])
 
   // No state persistence - let users navigate naturally without memory
 
@@ -117,8 +113,8 @@ export default function ATSFitApp() {
 
   /* ------------------------------ Render ------------------------------- */
   
-  // Only show loading if we haven't initialized yet
-  if (!hasInitialized) {
+  // Only show loading if auth is still loading
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-black relative text-white flex items-center justify-center">
         <Suspense fallback={<BackgroundFallback />}>

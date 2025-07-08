@@ -15,7 +15,7 @@ const BackgroundGlow = lazy(() => import('../BackgroundGlow'))
 
 export default function ResumeSetupPage() {
   const router = useRouter()
-  const { user, refreshUserProfile, updateResumeCache } = useAuth()
+  const { user, updateResumeCache } = useAuth()
   const [resumeContent, setResumeContent] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState("")
@@ -103,9 +103,7 @@ ___________________________________________________________`
       if (result.success) {
         // Instantly update the cached resume content for smooth UX
         updateResumeCache(resumeContent)
-        // Refresh user profile to update has_resume boolean
-        await refreshUserProfile()
-        // Navigate to dashboard
+        // Navigate to dashboard - updateResumeCache already handles hasResume correctly
         router.push("/")
       } else {
         setError(result.error || "Failed to save resume")

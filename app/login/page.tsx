@@ -65,6 +65,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isRedirecting, setIsRedirecting] = useState(false)
   const [error, setError] = useState("")
   const { signUp, signIn } = useAuth()
 
@@ -85,6 +86,7 @@ export default function LoginPage() {
         if (data.user && !data.session) {
           setError("Please check your email to confirm your account")
         } else {
+          setIsRedirecting(true)
           router.push("/") // Redirect to main app
         }
       }
@@ -108,6 +110,7 @@ export default function LoginPage() {
       if (error) {
         setError(error.message)
       } else {
+        setIsRedirecting(true)
         router.push("/") // Redirect to main app
       }
     } catch (err) {
@@ -327,10 +330,10 @@ export default function LoginPage() {
 
                 <Button
                   type="submit"
-                  disabled={!email || !password || isLoading}
+                  disabled={!email || !password || isLoading || isRedirecting}
                   className="w-full bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-bold py-3 rounded-xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
                 >
-                  {isLoading ? (
+                  {isLoading || isRedirecting ? (
                     <motion.div
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
@@ -339,7 +342,7 @@ export default function LoginPage() {
                   ) : (
                     <UserPlus className="mr-2 h-4 w-4" />
                   )}
-                  {isLoading ? "Creating Account..." : "Create Account"}
+                  {isRedirecting ? "Redirecting..." : isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
               </form>
 
@@ -436,10 +439,10 @@ export default function LoginPage() {
 
                 <Button
                   type="submit"
-                  disabled={!email || !password || isLoading}
+                  disabled={!email || !password || isLoading || isRedirecting}
                   className="w-full bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-bold py-3 rounded-xl transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
                 >
-                  {isLoading ? (
+                  {isLoading || isRedirecting ? (
                     <motion.div
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
@@ -448,7 +451,7 @@ export default function LoginPage() {
                   ) : (
                     <Mail className="mr-2 h-4 w-4" />
                   )}
-                  {isLoading ? "Signing In..." : "Sign In"}
+                  {isRedirecting ? "Redirecting..." : isLoading ? "Signing In..." : "Sign In"}
                 </Button>
               </form>
 
