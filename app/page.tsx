@@ -117,8 +117,8 @@ export default function ATSFitApp() {
 
   /* ------------------------------ Render ------------------------------- */
   
-  // Only show loading if we haven't initialized AND we don't have cached user data
-  if (authLoading && !hasInitialized && !authUser) {
+  // Only show loading if we haven't initialized yet
+  if (!hasInitialized) {
     return (
       <div className="min-h-screen bg-black relative text-white flex items-center justify-center">
         <Suspense fallback={<BackgroundFallback />}>
