@@ -8,6 +8,7 @@ import { Download, Copy, ArrowLeft, Eye, EyeOff, Crown, Lock, Sparkles, User, In
 import { generatePDF } from "@/lib/api"
 import { SharedHeader } from "@/components/shared-header"
 import { renderMarkdownPreview } from "@/lib/utils/preview-renderer"
+import { generatePDFCSS, PREVIEW_CONTAINER_STYLES } from "@/lib/utils/preview-renderer"
 
 interface User {
   id: string
@@ -80,59 +81,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
     }
     
     const html = renderMarkdownPreview(optimizedResume)
-    const css = `
-      body {
-        font-family: 'Georgia, "Times New Roman", serif';
-        font-size: 14px;
-        line-height: 1.2;
-        color: #111;
-        background-color: white;
-        margin: 0;
-        padding: 0;
-        display: flex;
-        justify-content: center;
-        min-height: 100vh;
-      }
-      
-      .resume-container {
-        background: white;
-        width: 8.5in;
-        min-height: 11in;
-        padding: 0.5in;
-        margin: 0;
-      }
-      
-      @media print {
-        body {
-          background-color: white;
-          padding: 0;
-          margin: 0;
-        }
-        
-        .resume-container {
-          width: 100%;
-          min-height: auto;
-          padding: 0.5in;
-          margin: 0;
-          box-shadow: none;
-          border-radius: 0;
-        }
-      }
-      
-      h1 { font-size: 1.8em; text-align: center; margin-bottom: 0.1rem; font-weight: 700; color: #111; }
-      h3 { font-size: 1.2em; color: #222; margin-top: 0.25rem; margin-bottom: 0.1rem; font-weight: 600; border-bottom: 1px solid #888; padding-bottom: 0.05rem; }
-      h4 { font-size: 1.1em; font-weight: 400; color: #333; margin-bottom: 0.05rem; margin-top: 0.08rem; }
-      p { margin: 0 0 0.01rem 0; line-height: 1.2; font-size: 1em; color: #333; }
-      h1 + p { text-align: center; margin-bottom: 0.15rem; font-size: 1em; color: #333; line-height: 1.3; }
-      .bullet-point { margin: 0 0 0.01rem 1.2rem; position: relative; }
-      .bullet-point::before { content: "\u2022"; position: absolute; left: -1rem; color: #111; font-weight: bold; }
-      .bullet-content { line-height: 1.3; font-size: 1em; color: #333; }
-      hr { border: none; border-top: 1px solid #ccc; margin: 0.2rem 0; clear: both; }
-      strong { font-weight: 700; color: #111; }
-      em { font-style: italic; color: #333; }
-      u { text-decoration: underline; color: #333; }
-      a { color: #111; text-decoration: underline; }
-    `
+    const css = generatePDFCSS(PREVIEW_CONTAINER_STYLES)
     
     const fullHTML = `
       <!DOCTYPE html>

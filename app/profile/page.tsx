@@ -12,6 +12,7 @@ import { SharedHeader } from "@/components/shared-header"
 import { generatePDF } from "@/lib/api"
 import { renderMarkdownPreview } from "@/lib/utils/preview-renderer"
 import { useRouter } from "next/navigation"
+import { generatePDFCSS, PREVIEW_CONTAINER_STYLES } from "@/lib/utils/preview-renderer"
 
 interface User {
   id: string
@@ -270,68 +271,8 @@ ___________________________________________________________`
     }
     
     const html = renderMarkdownPreview(resumeContent)
-    const css = `
-      body {
-        font-family: 'Georgia, "Times New Roman", serif';
-        font-size: 14px;
-        line-height: 1.2;
-        color: #111;
-        background-color: #f5f5f5;
-        margin: 0;
-        padding: 40px;
-        display: flex;
-        justify-content: center;
-        min-height: 100vh;
-        position: relative;
-      }
-      
-      .download-button {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #00FFAA;
-        color: #000;
-        border: none;
-        padding: 12px 20px;
-        border-radius: 8px;
-        font-weight: bold;
-        cursor: pointer;
-        font-size: 14px;
-        box-shadow: 0 4px 12px rgba(0,255,170,0.3);
-        transition: all 0.3s ease;
-        z-index: 1000;
-      }
-      
-      .download-button:hover {
-        background: #00DD99;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(0,255,170,0.4);
-      }
-      
-      .resume-container {
-        background: white;
-        width: 8.5in;
-        min-height: 11in;
-        padding: 0.5in;
-        box-shadow: 0 0 20px rgba(0,0,0,0.1);
-        border-radius: 8px;
-      }
-      
-      h1 { font-size: 1.8em; text-align: center; margin-bottom: 0.1rem; font-weight: 700; color: #111; }
-      h3 { font-size: 1.2em; color: #222; margin-top: 0.25rem; margin-bottom: 0.1rem; font-weight: 600; border-bottom: 1px solid #888; padding-bottom: 0.05rem; }
-      h4 { font-size: 1.1em; font-weight: 400; color: #333; margin-bottom: 0.05rem; margin-top: 0.08rem; }
-      p { margin: 0 0 0.01rem 0; line-height: 1.2; font-size: 1em; color: #333; }
-      h1 + p { text-align: center; margin-bottom: 0.15rem; font-size: 1em; color: #333; line-height: 1.3; }
-      .bullet-point { margin: 0 0 0.01rem 1.2rem; position: relative; }
-      .bullet-point::before { content: "\u2022"; position: absolute; left: -1rem; color: #111; font-weight: bold; }
-      .bullet-content { line-height: 1.3; font-size: 1em; color: #333; }
-      hr { border: none; border-top: 1px solid #ccc; margin: 0.2rem 0; clear: both; }
-      strong { font-weight: 700; color: #111; }
-      em { font-style: italic; color: #333; }
-      u { text-decoration: underline; color: #333; }
-      a { color: #111; text-decoration: underline; }
-    `
-    
+    const css = generatePDFCSS(PREVIEW_CONTAINER_STYLES)
+
     const fullHTML = `
       <!DOCTYPE html>
       <html lang="en">
@@ -342,145 +283,9 @@ ___________________________________________________________`
         <style>${css}</style>
       </head>
       <body>
-        <button class="download-button" onclick="downloadResume()">📄 Download PDF</button>
         <div class="resume-container">
           ${html}
         </div>
-        <script>
-          function downloadResume() {
-            // Create a clean version without the download button for PDF
-            const resumeHtml = document.querySelector('.resume-container').outerHTML;
-            const cleanCss = \`
-              @page {
-                margin: 0.75in;
-                size: letter;
-              }
-              body {
-                font-family: 'Georgia, "Times New Roman", serif';
-                font-size: 11pt;
-                line-height: 1.15;
-                color: #000;
-                background-color: white;
-                margin: 0;
-                padding: 0;
-                -webkit-print-color-adjust: exact;
-                color-adjust: exact;
-              }
-              .resume-container {
-                background: white;
-                width: 100%;
-                max-width: 100%;
-                padding: 0;
-                margin: 0;
-                box-shadow: none;
-                border-radius: 0;
-                overflow: visible;
-              }
-              h1 { 
-                font-size: 18pt; 
-                text-align: center; 
-                margin: 0 0 4pt 0; 
-                font-weight: 700; 
-                color: #000;
-                page-break-after: avoid;
-              }
-              h3 { 
-                font-size: 12pt; 
-                color: #000; 
-                margin: 16pt 0 4pt 0; 
-                font-weight: 600; 
-                border-bottom: 1pt solid #000; 
-                padding-bottom: 2pt;
-                page-break-after: avoid;
-                text-transform: uppercase;
-                letter-spacing: 0.5pt;
-              }
-              h4 { 
-                font-size: 11pt; 
-                font-weight: 600; 
-                color: #000; 
-                margin: 8pt 0 2pt 0;
-                page-break-after: avoid;
-              }
-              p { 
-                margin: 0 0 2pt 0; 
-                line-height: 1.15; 
-                font-size: 11pt; 
-                color: #000;
-                word-wrap: break-word;
-                overflow-wrap: break-word;
-              }
-              h1 + p { 
-                text-align: center; 
-                margin: 0 0 12pt 0; 
-                font-size: 10pt; 
-                color: #000; 
-                line-height: 1.2;
-                word-wrap: break-word;
-                overflow-wrap: break-word;
-                white-space: normal;
-                overflow: visible;
-                text-overflow: clip;
-              }
-              div[style*="position: relative"] {
-                margin: 0 0 2pt 18pt;
-                position: relative;
-                word-wrap: break-word;
-                overflow-wrap: break-word;
-              }
-              div[style*="position: relative"] span:first-child {
-                position: absolute;
-                left: -18pt;
-                color: #000;
-                font-weight: bold;
-              }
-              div[style*="position: relative"] span:last-child {
-                line-height: 1.15;
-                font-size: 11pt;
-                color: #000;
-                display: block;
-                word-wrap: break-word;
-                overflow-wrap: break-word;
-              }
-              hr { 
-                border: none; 
-                border-top: 0.5pt solid #666; 
-                margin: 8pt 0; 
-                clear: both;
-                page-break-inside: avoid;
-              }
-              strong { font-weight: 700; color: #000; }
-              em { font-style: italic; color: #000; }
-              u { text-decoration: underline; color: #000; }
-              a { color: #000; text-decoration: underline; }
-              
-              @media print {
-                body { margin: 0; padding: 0; }
-                .resume-container { margin: 0; padding: 0; }
-                * { -webkit-print-color-adjust: exact; color-adjust: exact; }
-                h3 { page-break-after: avoid; }
-                h4 { page-break-after: avoid; }
-                div[style*="position: relative"] { page-break-inside: avoid; }
-              }
-            \`;
-            
-            const printWindow = window.open('', '_blank');
-            printWindow.document.write(\`
-              <!DOCTYPE html>
-              <html>
-              <head>
-                <title>Resume</title>
-                <style>\${cleanCss}</style>
-              </head>
-              <body>
-                \${resumeHtml}
-              </body>
-              </html>
-            \`);
-            printWindow.document.close();
-            printWindow.print();
-          }
-        </script>
       </body>
       </html>
     `

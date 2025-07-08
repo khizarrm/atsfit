@@ -1,5 +1,5 @@
 import { HOST_URL } from './variables';
-import { renderMarkdownPreview, generatePDFCSS } from '@/lib/utils/preview-renderer';
+import { renderMarkdownPreview, generatePDFCSS, PREVIEW_CONTAINER_STYLES } from '@/lib/utils/preview-renderer';
 
 export async function annotateResume(resume_content: string, job_description: string, keywords: string[], user_notes: string) {
   const res = await fetch(`${HOST_URL}/api/annotate`, {
@@ -185,7 +185,7 @@ export async function generatePDF(
   try {
     // Generate HTML and CSS that matches the preview exactly
     const html = renderMarkdownPreview(markdownContent);
-    const css = generatePDFCSS();
+    const css = generatePDFCSS(PREVIEW_CONTAINER_STYLES);
 
     const requestPayload = {
       html,

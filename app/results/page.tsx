@@ -6,6 +6,7 @@ import { useState, useEffect, Suspense } from "react"
 import { ArrowLeft, AlertCircle } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
+import { generatePDFCSS, PREVIEW_CONTAINER_STYLES } from "@/lib/utils/preview-renderer"
 import { ResultsView } from "@/components/results-view"
 
 interface User {
