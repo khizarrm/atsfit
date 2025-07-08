@@ -10,7 +10,6 @@ import { calculateAtsScore, AtsScoreResult } from "@/lib/utils/ats-scorer"
 import { useAuth } from "@/contexts/auth-context"
 import { LoadingProgress } from "@/components/LoadingProgress"
 import { type ResultsData } from "@/lib/utils/results-validation"
-import { ResultsView } from "@/components/results-view"
 import { SharedHeader } from "@/components/shared-header"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 
@@ -176,7 +175,8 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
       setCurrentStep("Optimizing resume structure...")
       updateProgressSmooth(70)
       
-      const rewriteResult = await rewriteResume(annotateResult["annotated_resume"])
+      console.log("Passing in:", annotateResult["annotated_resume"], userNotes.trim() )
+      const rewriteResult = await rewriteResume(annotateResult["annotated_resume"], userNotes.trim())
       
       // Calculate final ATS score with the new optimized resume
       setCurrentStep("Calculating final ATS score...")
@@ -427,23 +427,6 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
     name: user.user_metadata?.full_name || user.email!,
   } : null
 
-  // Show results view if optimization is complete
-  if (showResults && optimizationResults) {
-    return (
-      <ResultsView
-        optimizedResume={optimizationResults.optimizedResume}
-        onBack={handleBackFromResults}
-        onSignUp={onSignUp}
-        onNextJob={handleNextJob}
-        onGoToProfile={onGoToProfile}
-        isTrialMode={!user}
-        user={mappedUser}
-        initialAtsScore={optimizationResults.initialAtsScore}
-        finalAtsScore={optimizationResults.finalAtsScore}
-        missingKeywordsCount={optimizationResults.missingKeywordsCount}
-      />
-    )
-  }
 
   return (
     <motion.div

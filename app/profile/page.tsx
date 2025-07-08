@@ -282,6 +282,30 @@ ___________________________________________________________`
         display: flex;
         justify-content: center;
         min-height: 100vh;
+        position: relative;
+      }
+      
+      .download-button {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #00FFAA;
+        color: #000;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,255,170,0.3);
+        transition: all 0.3s ease;
+        z-index: 1000;
+      }
+      
+      .download-button:hover {
+        background: #00DD99;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,255,170,0.4);
       }
       
       .resume-container {
@@ -318,9 +342,145 @@ ___________________________________________________________`
         <style>${css}</style>
       </head>
       <body>
+        <button class="download-button" onclick="downloadResume()">📄 Download PDF</button>
         <div class="resume-container">
           ${html}
         </div>
+        <script>
+          function downloadResume() {
+            // Create a clean version without the download button for PDF
+            const resumeHtml = document.querySelector('.resume-container').outerHTML;
+            const cleanCss = \`
+              @page {
+                margin: 0.75in;
+                size: letter;
+              }
+              body {
+                font-family: 'Georgia, "Times New Roman", serif';
+                font-size: 11pt;
+                line-height: 1.15;
+                color: #000;
+                background-color: white;
+                margin: 0;
+                padding: 0;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+              }
+              .resume-container {
+                background: white;
+                width: 100%;
+                max-width: 100%;
+                padding: 0;
+                margin: 0;
+                box-shadow: none;
+                border-radius: 0;
+                overflow: visible;
+              }
+              h1 { 
+                font-size: 18pt; 
+                text-align: center; 
+                margin: 0 0 4pt 0; 
+                font-weight: 700; 
+                color: #000;
+                page-break-after: avoid;
+              }
+              h3 { 
+                font-size: 12pt; 
+                color: #000; 
+                margin: 16pt 0 4pt 0; 
+                font-weight: 600; 
+                border-bottom: 1pt solid #000; 
+                padding-bottom: 2pt;
+                page-break-after: avoid;
+                text-transform: uppercase;
+                letter-spacing: 0.5pt;
+              }
+              h4 { 
+                font-size: 11pt; 
+                font-weight: 600; 
+                color: #000; 
+                margin: 8pt 0 2pt 0;
+                page-break-after: avoid;
+              }
+              p { 
+                margin: 0 0 2pt 0; 
+                line-height: 1.15; 
+                font-size: 11pt; 
+                color: #000;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+              }
+              h1 + p { 
+                text-align: center; 
+                margin: 0 0 12pt 0; 
+                font-size: 10pt; 
+                color: #000; 
+                line-height: 1.2;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                white-space: normal;
+                overflow: visible;
+                text-overflow: clip;
+              }
+              div[style*="position: relative"] {
+                margin: 0 0 2pt 18pt;
+                position: relative;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+              }
+              div[style*="position: relative"] span:first-child {
+                position: absolute;
+                left: -18pt;
+                color: #000;
+                font-weight: bold;
+              }
+              div[style*="position: relative"] span:last-child {
+                line-height: 1.15;
+                font-size: 11pt;
+                color: #000;
+                display: block;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+              }
+              hr { 
+                border: none; 
+                border-top: 0.5pt solid #666; 
+                margin: 8pt 0; 
+                clear: both;
+                page-break-inside: avoid;
+              }
+              strong { font-weight: 700; color: #000; }
+              em { font-style: italic; color: #000; }
+              u { text-decoration: underline; color: #000; }
+              a { color: #000; text-decoration: underline; }
+              
+              @media print {
+                body { margin: 0; padding: 0; }
+                .resume-container { margin: 0; padding: 0; }
+                * { -webkit-print-color-adjust: exact; color-adjust: exact; }
+                h3 { page-break-after: avoid; }
+                h4 { page-break-after: avoid; }
+                div[style*="position: relative"] { page-break-inside: avoid; }
+              }
+            \`;
+            
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(\`
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <title>Resume</title>
+                <style>\${cleanCss}</style>
+              </head>
+              <body>
+                \${resumeHtml}
+              </body>
+              </html>
+            \`);
+            printWindow.document.close();
+            printWindow.print();
+          }
+        </script>
       </body>
       </html>
     `
