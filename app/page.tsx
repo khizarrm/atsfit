@@ -8,6 +8,7 @@ import { DashboardView } from "@/components/dashboard-view"
 import { ResumeSetupView } from "@/components/resume-setup-view"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
+import LoginPage from "@/app/login/page"
 
 // Lazy load BackgroundGlow for better performance
 const BackgroundGlow = lazy(() => import('./BackgroundGlow'))
@@ -17,6 +18,7 @@ const BackgroundGlow = lazy(() => import('./BackgroundGlow'))
 /* -------------------------------------------------------------------------- */
 
 type AppState =
+  | "login"
   | "dashboard"
   | "profile"
   | "resume-setup"
@@ -45,7 +47,7 @@ function BackgroundFallback() {
 
 export default function ATSFitApp() {
   /* ------------------------------- State --------------------------------- */
-  const [currentState, setCurrentState] = useState<AppState>("dashboard")
+  const [currentState, setCurrentState] = useState<AppState>("login")
   const [user, setUser] = useState<User | null>(null)
   const [hasInitialized, setHasInitialized] = useState(false)
   const router = useRouter()
@@ -57,7 +59,6 @@ export default function ATSFitApp() {
   const { user: authUser, loading: authLoading, hasResume } = useAuth()
   
   useEffect(() => {
-    // 🔍 DEBUG: Print all auth state
     console.log("🔍 AUTH DEBUG:", {
       authUser: authUser ? { id: authUser.id, email: authUser.email } : null,
       authLoading,
@@ -86,9 +87,9 @@ export default function ATSFitApp() {
       setHasInitialized(true)
     } else if (!authUser && !authLoading && !hasInitialized) {
       // Only set login state if we're definitely not loading and have no user
-      console.log("🚫 No auth user, redirecting to login")
+      console.log("🚫 No auth user, staying on login page")
       setUser(null)
-      router.push("/login")
+      setCurrentState("login")
       setHasInitialized(true)
     }
   }, [authUser, authLoading, hasResume, hasInitialized, currentState])
@@ -102,6 +103,8 @@ export default function ATSFitApp() {
   /* ---------------------------- View Factory ---------------------------- */
   const renderView = () => {
     switch (currentState) {
+      case "login":
+        return <LoginPage />
       case "resume-setup":
         return (
           <ResumeSetupView
@@ -113,7 +116,7 @@ export default function ATSFitApp() {
       case "dashboard":
         return (
           <DashboardView
-            onSignUp={() => router.push("/login")}
+            onSignUp={() => goTo("login")}
             onGoToProfile={() => router.push("/profile")}
             user={user}
           />

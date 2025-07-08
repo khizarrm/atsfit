@@ -168,7 +168,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
           <div className="flex items-center space-x-4 w-48"> {/* Fixed width for centering */}
             <Button onClick={onBack} variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              {isTrialMode ? "Back to Try It" : "Back to Dashboard"}
+              {isTrialMode ? "Back to Get Started" : "Back to Dashboard"}
             </Button>
           </div>
         }
@@ -673,7 +673,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                   onClick={onSignUp}
                   className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-bold px-6 py-3 rounded-xl transition-all duration-300 hover:scale-105"
                 >
-                  Sign Up Free
+                  Get Started Free
                 </Button>
               </div>
             </motion.div>

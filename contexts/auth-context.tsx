@@ -164,6 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // User sees immediate response with cached data
     }
 
+    console.log("Getting initial session...")
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)

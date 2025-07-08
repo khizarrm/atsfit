@@ -149,7 +149,7 @@ export function SharedHeader({
             onClick={onSignUp}
             className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-semibold px-4 py-2 text-sm rounded-xl transition-all duration-300"
           >
-            Sign Up Free
+            Get Started Free
           </Button>
         )
       )}
