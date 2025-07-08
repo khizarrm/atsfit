@@ -109,10 +109,6 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
   }
 
   const handleDownload = async () => {
-    if (isTrialMode) {
-      onSignUp()
-      return
-    }
     
     if (!optimizedResume.trim()) {
       return
@@ -124,7 +120,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
       
       const result = await generatePDF(optimizedResume, {
         format: 'letter',
-        filename: 'optimized-resume.pdf'
+        filename: 'new-resume.pdf'
       })
       
       if (!result.success) {
@@ -542,7 +538,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                     ) : (
                       <>
                         <Download className="mr-2 h-4 w-4 inline" />
-                        {isTrialMode ? "Upgrade for PDF" : "Download PDF"}
+                        {"Download PDF"}
                       </>
                     )}
                   </Button>
