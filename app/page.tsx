@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion"
 
 // Views
 import { DashboardView } from "@/components/dashboard-view"
-import { ResumeSetupView } from "@/components/resume-setup-view"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import LoginPage from "@/app/login/page"
@@ -20,8 +19,6 @@ const BackgroundGlow = lazy(() => import('./BackgroundGlow'))
 type AppState =
   | "login"
   | "dashboard"
-  | "profile"
-  | "resume-setup"
 
 interface User {
   id: string
@@ -82,7 +79,7 @@ export default function ATSFitApp() {
         setCurrentState("dashboard")
       } else {
         console.log("❌ No resume found, redirecting to setup")
-        setCurrentState("resume-setup")
+        router.push("/resume-setup")
       }
       setHasInitialized(true)
     } else if (!authUser && !authLoading && !hasInitialized) {
@@ -92,7 +89,7 @@ export default function ATSFitApp() {
       setCurrentState("login")
       setHasInitialized(true)
     }
-  }, [authUser, authLoading, hasResume, hasInitialized, currentState])
+  }, [authUser, authLoading, hasResume, hasInitialized, router])
 
   // No state persistence - let users navigate naturally without memory
 
@@ -105,14 +102,6 @@ export default function ATSFitApp() {
     switch (currentState) {
       case "login":
         return <LoginPage />
-      case "resume-setup":
-        return (
-          <ResumeSetupView
-            onComplete={() => goTo("dashboard")}
-            onSkip={() => goTo("dashboard")}
-            user={user}
-          />
-        )
       case "dashboard":
         return (
           <DashboardView

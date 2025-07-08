@@ -124,9 +124,7 @@ phone • email • website • github
     return null
   }
 
-  const chatGPTPrompt = 
-
-`Convert the following resume text exactly as written into Markdown format.
+  const chatGPTPrompt = `Convert the following resume text exactly as written into Markdown format.
 
 Instructions:
 
@@ -140,10 +138,6 @@ Use #### (H4) for company or project titles.
 
 Keep bullet points, line breaks, and formatting exactly as in my input. Do not add bullet points for project/experience titles, only for detailed points regarding an experience or project. 
 
-Output it as plain text so I can easily copy and paste it.
-
-Your only task is to strictly convert my resume to Markdown, preserving all content exactly.
-
 Bold small categories and project names, eg. Frameworks, Technologies. 
 
 Italicize company names, but bold the names of positions. 
@@ -153,6 +147,16 @@ Underline quantifiable metrics.
 Format bullet points with a '-'
 
 When returning, ensure you do not modify any content whatsoever. 
+
+Do not add a newline for job titiles and company names: keep both on the same line, with title bolded and company name italicized.
+
+When addings links, add them appropriately as follows [text](url)
+
+Ensure all contact info text below the header is seperated with spaces using '$|$' in markdown
+
+Only add urls where neccesary, never in random places
+
+Output it as plain text so I can easily copy and paste it.
 
 Resume follows below:
 ___________________________________________________________`

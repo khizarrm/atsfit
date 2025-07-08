@@ -232,21 +232,13 @@ export default function LoginPage() {
             </div>
           </motion.div>
 
-          {/* Action Buttons */}
+          {/* Action Button */}
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 1.0, duration: 0.6 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+            className="flex justify-center"
           >
-            <Button
-              onClick={handleTryIt}
-              className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-bold px-8 py-6 text-lg rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(0,255,170,0.4)] shadow-[0_0_20px_rgba(0,255,170,0.2)]"
-            >
-              <Zap className="mr-3 h-5 w-5" />
-              Get Started Free
-            </Button>
-
             <Button
               onClick={() => {
                 setShowSignup(true)
@@ -254,21 +246,12 @@ export default function LoginPage() {
                 setPassword("")
                 setError("")
               }}
-              className="bg-white/5 backdrop-blur-md border border-white/10 hover:bg-white/10 text-white font-semibold px-8 py-6 text-lg rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(0,255,170,0.3)]"
+              className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-bold px-8 py-6 text-lg rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(0,255,170,0.4)] shadow-[0_0_20px_rgba(0,255,170,0.2)]"
             >
               <UserPlus className="mr-3 h-5 w-5" />
               Create Account
             </Button>
           </motion.div>
-
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1.2 }}
-            className="text-gray-500 text-sm mt-4"
-          >
-            No signup required to try • Full features with account
-          </motion.p>
         </motion.div>
 
         {/* Signup Modal */}
