@@ -168,6 +168,7 @@ ___________________________________________________________`
   }
 
   const handleSave = async () => {
+    console.log("Saving...")
     if (!user || !resumeContent.trim()) {
       showMessage('error', 'Please enter resume content')
       return
