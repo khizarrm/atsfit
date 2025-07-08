@@ -27,6 +27,8 @@ export function SharedHeader({
 }: SharedHeaderProps) {
   const { signOut } = useAuth()
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
+  const [isNavigating, setIsNavigating] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Close dropdown when clicking outside
@@ -45,11 +47,23 @@ export function SharedHeader({
 
   const handleLogout = async () => {
     try {
-      await signOut()
+      setIsLoggingOut(true)
       setShowProfileDropdown(false)
+      await signOut()
     } catch (error) {
       console.error('Error signing out:', error)
+      setIsLoggingOut(false)
     }
+  }
+
+  const handleProfileNavigation = () => {
+    setIsNavigating(true)
+    setShowProfileDropdown(false)
+    if (onGoToProfile) {
+      onGoToProfile()
+    }
+    // Reset navigation state after a short delay
+    setTimeout(() => setIsNavigating(false), 1000)
   }
 
 
@@ -89,23 +103,48 @@ export function SharedHeader({
                 {onGoToProfile && (
                   <Button
                     variant="ghost"
-                    className="w-full justify-start text-white hover:bg-white/10 hover:text-white"
-                    onClick={() => {
-                      setShowProfileDropdown(false)
-                      onGoToProfile()
-                    }}
+                    disabled={isNavigating}
+                    className="w-full justify-start text-white hover:bg-white/10 hover:text-white disabled:opacity-50"
+                    onClick={handleProfileNavigation}
                   >
-                    <UserCog className="h-4 w-4 mr-2" />
-                    Manage Resume
+                    {isNavigating ? (
+                      <>
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                          className="w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"
+                        />
+                        Opening...
+                      </>
+                    ) : (
+                      <>
+                        <UserCog className="h-4 w-4 mr-2" />
+                        Manage Resume
+                      </>
+                    )}
                   </Button>
                 )}
                 <Button
                   variant="ghost"
-                  className="w-full justify-start text-white hover:bg-white/10 hover:text-white"
+                  disabled={isLoggingOut}
+                  className="w-full justify-start text-white hover:bg-white/10 hover:text-white disabled:opacity-50"
                   onClick={handleLogout}
                 >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
+                  {isLoggingOut ? (
+                    <>
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                        className="w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2"
+                      />
+                      Signing out...
+                    </>
+                  ) : (
+                    <>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Logout
+                    </>
+                  )}
                 </Button>
               </div>
             </motion.div>

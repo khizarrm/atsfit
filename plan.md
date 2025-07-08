@@ -1,90 +1,99 @@
-# PDF Print View Enhancement Plan
+# Resume State Management Update Plan
 
-## Vision Statement
-**Make the full A4 view display as a clean, printable PDF without decorative backgrounds or UI elements.**
+## Current State Analysis
 
-## Current Problem
-- A4 view includes app background, decorative elements, and UI chrome
-- Not suitable for direct printing or saving as PDF
-- Users can't easily print/save the resume without extra styling
+Based on the codebase analysis, I've identified the current authentication and resume flow:
 
-## Solution Overview
-Create a clean, print-ready A4 view that:
-- Removes all decorative backgrounds and UI elements
-- Shows only the resume content in proper A4 format
-- Maintains professional PDF styling
-- Enables direct browser printing/saving
+### Current Architecture:
+- **AuthContext** (`contexts/auth-context.tsx`) manages authentication and resume state
+- **Resume state** is tracked via `hasResume` boolean and `resumeMd` content
+- **Database** has a new `has_resume` boolean field in the user table (as mentioned)
+- **Main routing** (`app/page.tsx`) checks `hasResume` to determine user flow
 
-## Implementation Plan
+### Current Issue:
+The system currently fetches the full resume content from the `resumes` table to determine if a user has a resume, but now that there's a `has_resume` boolean in the user table, we should use that instead for better performance and smoother UX.
 
-### Step 1: Identify Current A4 View Component
-- Find the component that renders the A4 view
-- Understand how it's currently styled and structured
-- Identify what backgrounds/decorations need removal
+## Proposed Changes
 
-### Step 2: Create Print-Ready Mode
-- Add a "print mode" state or prop to the A4 view
-- When in print mode:
-  - Remove all app backgrounds (the neon green gradients)
-  - Remove navigation elements
-  - Remove any UI chrome or decorative elements
-  - Use white background
-  - Maintain proper A4 dimensions and margins
+### 1. Update AuthContext to Use Database `has_resume` Field
+**File:** `contexts/auth-context.tsx`
 
-### Step 3: Update Styling
-- Create print-specific CSS that:
-  - Sets white background
-  - Removes all gradients and effects
-  - Uses standard fonts suitable for printing
-  - Maintains proper spacing and layout
-  - Ensures black text on white background
+**Changes:**
+- Modify the authentication flow to fetch user profile data including `has_resume` boolean
+- Update `hasResume` state to be set from the database field instead of checking resume content existence
+- Keep the existing `resumeMd` lazy-loading for when it's actually needed (like in dashboard)
+- Add a function to update the `has_resume` field when resume is saved/deleted
 
-### Step 4: User Experience
-- Determine trigger for print mode:
-  - Option A: Automatic when viewing A4 view
-  - Option B: Toggle button for print/display mode
-  - Option C: Separate "Print Preview" route/modal
+### 2. Update Resume Operations to Sync Boolean Field
+**File:** `lib/database/resume-operations.ts`
 
-### Step 5: Browser Print Optimization
-- Add CSS media queries for print
-- Ensure proper page breaks
-- Optimize margins for standard printers
-- Test browser print dialog functionality
+**Changes:**
+- Modify `saveUserResume()` to also update the `has_resume` boolean to `true` in the user table
+- Add a new function to update user's `has_resume` status
+- Ensure both tables stay in sync when resume is saved or deleted
 
-## Technical Requirements
+### 3. Update Resume Setup Flow
+**File:** `components/resume-setup-view.tsx`
 
-### Files to Investigate:
-1. Find A4 view component (likely in components/ directory)
-2. Check if there's a results view or preview component
-3. Look for existing print-related CSS
+**Changes:**
+- After successful resume save, update the user's `has_resume` boolean
+- Refresh the auth context to reflect the new status
+- Ensure smooth transition to dashboard after setup
 
-### Styling Changes:
-- Remove `BackgroundGlow` component from A4 view
-- Override app-level background styles
-- Add print-specific CSS classes
-- Ensure proper A4 dimensions (210mm x 297mm)
+### 4. Fix Main App Routing Logic
+**File:** `app/page.tsx`
 
-### Expected Behavior:
-- Clean, white background
-- Professional resume layout
-- Browser print dialog shows clean PDF
-- Ctrl+P or Print button gives clean output
-- No decorative elements or app UI
+**Changes:**
+- Fix the routing logic to properly direct users without resumes to the setup view
+- Ensure the flow is: Login → Check `has_resume` → Route to Setup or Dashboard
 
-## Success Criteria
+## Implementation Steps
 
-1. ✅ A4 view displays with white background
-2. ✅ No decorative gradients or neon effects
-3. ✅ Professional, print-ready appearance
-4. ✅ Browser print dialog shows clean layout
-5. ✅ Maintains proper resume formatting
-6. ✅ Text remains readable and properly spaced
-7. ✅ Standard A4 dimensions preserved
+### Step 1: Update Database Operations
+- Add function to update user's `has_resume` field
+- Modify `saveUserResume()` to update both tables atomically
+- Add function to get user profile data including `has_resume`
 
-## Risk Mitigation
-- Test across different browsers (Chrome, Firefox, Safari)
-- Verify mobile responsiveness isn't broken
-- Ensure existing functionality remains intact
-- Test actual printing on physical printers
+### Step 2: Update AuthContext
+- Add user profile fetching on authentication
+- Set `hasResume` from database boolean field
+- Keep `resumeMd` lazy-loading for performance
+- Add function to sync `has_resume` field
 
-This plan will transform the A4 view into a true print-ready PDF preview that users can easily print or save without decorative elements.
+### Step 3: Update Resume Setup Component
+- Ensure it updates the `has_resume` boolean on successful save
+- Refresh auth context after resume setup completion
+
+### Step 4: Fix App Routing
+- Correct the routing logic to use setup view when `hasResume` is false
+- Ensure smooth flow from authentication to appropriate view
+
+### Step 5: Test the Complete Flow
+- Test authentication with existing resume
+- Test authentication without resume (should go to setup)
+- Test resume setup completion (should go to dashboard)
+- Verify state consistency across all components
+
+## Benefits of This Approach
+
+1. **Better Performance**: No need to fetch full resume content just to check existence
+2. **Smoother UX**: Immediate routing decisions based on boolean field
+3. **Consistency**: Single source of truth for resume existence
+4. **Scalability**: Better for when user base grows
+
+## Files to be Modified
+
+1. `contexts/auth-context.tsx` - Update authentication state management
+2. `lib/database/resume-operations.ts` - Add user profile operations
+3. `components/resume-setup-view.tsx` - Update save flow
+4. `app/page.tsx` - Fix routing logic
+
+## Assumptions
+
+- The user table now has a `has_resume` boolean field
+- The field is properly indexed and maintained
+- Existing users have this field populated correctly
+
+## Timeline
+
+This should be a relatively quick update (1-2 hours) since the infrastructure is already in place - we're just optimizing the data fetching and state management approach.

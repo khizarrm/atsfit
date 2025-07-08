@@ -16,7 +16,7 @@ interface ResumeSetupViewProps {
 }
 
 export function ResumeSetupView({ onComplete, onSkip, user }: ResumeSetupViewProps) {
-  const { refreshResume } = useAuth()
+  const { refreshUserProfile, updateResumeCache } = useAuth()
   const [resumeContent, setResumeContent] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState("")
@@ -91,12 +91,12 @@ ___________________________________________________________`
       const result = await saveUserResume(user.id, resumeContent)
       
       if (result.success) {
-        // Refresh the resume in auth context
-        await refreshResume()
-        // Small delay to ensure auth context state is updated
-        setTimeout(() => {
-          onComplete()
-        }, 100)
+        // Instantly update the cached resume content for smooth UX
+        updateResumeCache(resumeContent)
+        // Refresh user profile to update has_resume boolean
+        await refreshUserProfile()
+        // Navigate immediately - no delay needed since cache is updated
+        onComplete()
       } else {
         setError(result.error || "Failed to save resume")
       }

@@ -91,6 +91,16 @@ export async function saveUserResume(userId: string, resumeMd: string): Promise<
       }
     }
 
+    // Update user's has_resume boolean to true
+    const { error: userUpdateError } = await supabase.auth.updateUser({
+      data: { has_resume: true }
+    })
+
+    if (userUpdateError) {
+      console.error('Failed to update user has_resume field:', userUpdateError)
+      // Don't fail the whole operation for this, just log it
+    }
+
     return {
       data: data?.[0] || null,
       success: true
@@ -120,6 +130,16 @@ export async function deleteUserResume(userId: string): Promise<{ success: boole
         error: 'Failed to delete resume',
         success: false
       }
+    }
+
+    // Update user's has_resume boolean to false
+    const { error: userUpdateError } = await supabase.auth.updateUser({
+      data: { has_resume: false }
+    })
+
+    if (userUpdateError) {
+      console.error('Failed to update user has_resume field:', userUpdateError)
+      // Don't fail the whole operation for this, just log it
     }
 
     return {
@@ -161,4 +181,63 @@ export function validateResumeContent(resumeMd: string): { valid: boolean; error
   }
 
   return { valid: true }
+}
+
+/**
+ * Get user profile data including has_resume boolean
+ */
+export async function getUserProfile(): Promise<{ has_resume: boolean; error?: string }> {
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser()
+    
+    if (error || !user) {
+      console.error('Error getting user profile:', error)
+      return {
+        has_resume: false,
+        error: 'Failed to get user profile'
+      }
+    }
+
+    // Get has_resume from user metadata
+    const hasResume = user.user_metadata?.has_resume || false
+
+    return {
+      has_resume: hasResume
+    }
+  } catch (error) {
+    console.error('Unexpected error getting user profile:', error)
+    return {
+      has_resume: false,
+      error: 'An unexpected error occurred'
+    }
+  }
+}
+
+/**
+ * Update user's has_resume status
+ */
+export async function updateUserHasResume(hasResume: boolean): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.auth.updateUser({
+      data: { has_resume: hasResume }
+    })
+
+    if (error) {
+      console.error('Error updating user has_resume:', error)
+      return {
+        success: false,
+        error: 'Failed to update user has_resume status'
+      }
+    }
+
+    return {
+      success: true
+    }
+  } catch (error) {
+    console.error('Unexpected error updating user has_resume:', error)
+    return {
+      success: false,
+      error: 'An unexpected error occurred'
+    }
+  }
 }

@@ -20,6 +20,7 @@ type AppState =
   | "dashboard"
   | "profile"
   | "results"
+  | "resume-setup"
 
 interface User {
   id: string
@@ -116,7 +117,7 @@ export default function ATSFitApp() {
           setCurrentState("dashboard")
         } else {
           console.log("No resume found, redirecting to setup")
-          setCurrentState("dashboard")
+          setCurrentState("resume-setup")
         }
       } else {
         // User is logged out
@@ -141,6 +142,14 @@ export default function ATSFitApp() {
     switch (currentState) {
       case "login":
         return <LoginView onLogin={handleLogin} />
+      case "resume-setup":
+        return (
+          <ResumeSetupView
+            onComplete={() => goTo("dashboard")}
+            onSkip={() => goTo("dashboard")}
+            user={user}
+          />
+        )
       case "dashboard":
         return (
           <DashboardView

@@ -3,7 +3,7 @@
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { ArrowLeft, Save, Eye, EyeOff, User, FileText, CheckCircle, AlertCircle, Download, Copy } from "lucide-react"
 import { Resume } from "@/lib/database/resume-operations"
 import { useAuth } from "@/contexts/auth-context"
@@ -22,59 +22,25 @@ interface User {
 function BackgroundGlow() {
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none">
-      {/* Central radial glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,255,170,0.15)_0%,rgba(0,255,170,0.08)_25%,rgba(0,255,170,0.03)_50%,transparent_70%)]" />
-
-      {/* Animated flowing streams */}
+      {/* Static central radial glow */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,255,170,0.12)_0%,rgba(0,255,170,0.06)_25%,rgba(0,255,170,0.02)_50%,transparent_70%)]" />
+      
+      {/* Single subtle animated glow */}
       <motion.div
-        className="absolute inset-0"
-        animate={{
-          background: [
-            "radial-gradient(ellipse_800px_400px_at_20%_30%, rgba(0,255,170,0.1), transparent)",
-            "radial-gradient(ellipse_800px_400px_at_80%_70%, rgba(0,255,170,0.1), transparent)",
-            "radial-gradient(ellipse_800px_400px_at_40%_80%, rgba(0,255,170,0.1), transparent)",
-            "radial-gradient(ellipse_800px_400px_at_60%_20%, rgba(0,255,170,0.1), transparent)",
-            "radial-gradient(ellipse_800px_400px_at_20%_30%, rgba(0,255,170,0.1), transparent)",
-          ],
-        }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      {/* Pulsing edge glows */}
-      <motion.div
-        className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#00FFAA] to-transparent opacity-30"
-        animate={{ opacity: [0.2, 0.6, 0.2], scaleX: [0.8, 1.2, 0.8] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      <motion.div
-        className="absolute bottom-0 right-0 w-full h-px bg-gradient-to-l from-transparent via-[#00FFAA] to-transparent opacity-30"
-        animate={{ opacity: [0.2, 0.6, 0.2], scaleX: [0.8, 1.2, 0.8] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-      />
-
-      {/* Corner accent glows */}
-      <motion.div
-        className="absolute top-0 left-0 w-96 h-96 bg-[radial-gradient(circle,rgba(0,255,170,0.08),transparent_70%)]"
-        animate={{ opacity: [0.3, 0.7, 0.3], scale: [0.8, 1.1, 0.8] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="absolute bottom-0 right-0 w-96 h-96 bg-[radial-gradient(circle,rgba(0,255,170,0.08),transparent_70%)]"
-        animate={{ opacity: [0.3, 0.7, 0.3], scale: [0.8, 1.1, 0.8] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        className="absolute inset-0 bg-[radial-gradient(ellipse_600px_300px_at_50%_50%, rgba(0,255,170,0.05), transparent)]"
+        animate={{ opacity: [0.3, 0.5, 0.3] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
       />
     </div>
   )
 }
 
 export default function ProfilePage() {
-  const { user, loading, refreshResume } = useAuth()
+  const { user, loading, resumeMd, updateResumeCache } = useAuth()
   const router = useRouter()
   const [resumeContent, setResumeContent] = useState("")
   const [showPreview, setShowPreview] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [hasChanges, setHasChanges] = useState(false)
   const [originalContent, setOriginalContent] = useState("")
@@ -82,15 +48,70 @@ export default function ProfilePage() {
   const [pdfError, setPdfError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
+  // Memoize the markdown preview rendering
+  const renderedMarkdown = useMemo(() => renderMarkdownPreview(resumeContent), [resumeContent])
+
   useEffect(() => {
-    if (!loading && user) {
-        loadUserResume()
+    // Initialize with cached resume content from AuthContext - instant load!
+    if (resumeMd) {
+      setResumeContent(resumeMd)
+      setOriginalContent(resumeMd)
+    } else {
+      // No existing resume, set template
+      const template = `# YOUR NAME
+
+phone • email • website • github
+
+---
+
+### EDUCATION
+
+#### University Name, City, State
+*Degree Title* | Month Year - Month Year | GPA: X.X/4.0  
+**Relevant Coursework:** Course 1, Course 2, Course 3
+
+---
+
+### EXPERIENCE
+
+#### Job Title - Company Name
+*Month Year - Month Year*
+- Achievement or responsibility here
+- Another achievement with metrics
+- Third point about impact
+
+---
+
+### SKILLS
+
+**Programming Languages:** Language1, Language2, Language3  
+**Frameworks:** Framework1, Framework2  
+**Tools:** Tool1, Tool2, Tool3`
+      
+      setResumeContent(template)
+      setOriginalContent("")
     }
-}, [loading])
+  }, [resumeMd])
 
   
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="min-h-screen bg-black relative text-white flex items-center justify-center"
+      >
+        <BackgroundGlow />
+        <div className="text-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+            className="w-8 h-8 border-2 border-[#00FFAA] border-t-transparent rounded-full mx-auto mb-4"
+          />
+          <p className="text-gray-400">Loading your profile...</p>
+        </div>
+      </motion.div>
+    )
   }
 
   if (!user) {
@@ -131,71 +152,6 @@ When returning, ensure you do not modify any content whatsoever.
 Resume follows below:
 ___________________________________________________________`
 
-  const loadUserResume = async () => {
-    try {
-      setIsLoading(true)
-      
-      if (!user) {
-        setIsLoading(false)
-        return
-      }
-
-      // Add timeout to prevent stuck loading
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timed out')), 10000)
-      )
-      
-      const result = await Promise.race([
-        getUserResume(user.id),
-        timeoutPromise
-      ]) as any
-      console.log('getUserResume result:', result)
-
-      if (result.success && result.data) {
-        setResumeContent(result.data.resume_md)
-        setOriginalContent(result.data.resume_md)
-      } else {
-        // No existing resume, set template
-        const template = `# YOUR NAME
-
-phone • email • website • github
-
----
-
-### EDUCATION
-
-#### University Name, City, State
-*Degree Title* | Month Year - Month Year | GPA: X.X/4.0  
-**Relevant Coursework:** Course 1, Course 2, Course 3
-
----
-
-### EXPERIENCE
-
-#### Job Title - Company Name
-*Month Year - Month Year*
-- Achievement or responsibility here
-- Another achievement with metrics
-- Third point about impact
-
----
-
-### SKILLS
-
-**Programming Languages:** Language1, Language2, Language3  
-**Frameworks:** Framework1, Framework2  
-**Tools:** Tool1, Tool2, Tool3`
-        
-        setResumeContent(template)
-        setOriginalContent("")
-      }
-    } catch (error) {
-      console.error('Error loading resume:', error)
-      showMessage('error', 'Failed to load resume')
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const handleContentChange = (value: string) => {
     setResumeContent(value)
@@ -230,8 +186,8 @@ phone • email • website • github
         setHasChanges(false)
         showMessage('success', 'Resume saved successfully!')
         
-        // Refresh the resume in auth context so dashboard gets updated data
-        await refreshResume()
+        // Update the cached resume content in auth context for instant sync across app
+        updateResumeCache(resumeContent)
       } else {
         showMessage('error', result.error || 'Failed to save resume')
       }
@@ -388,30 +344,13 @@ phone • email • website • github
     setTimeout(() => setCopied(false), 2000)
   }
 
-  if (isLoading) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="min-h-screen flex items-center justify-center"
-      >
-        <div className="text-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-            className="w-8 h-8 border-2 border-[#00FFAA] border-t-transparent rounded-full mx-auto mb-4"
-          />
-          <p className="text-gray-400">Loading your resume...</p>
-        </div>
-      </motion.div>
-    )
-  }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 50 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -50 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
       className="min-h-screen flex flex-col"
     >
     <BackgroundGlow />
@@ -431,12 +370,7 @@ phone • email • website • github
 
       {/* Main Content */}
       <div className="flex-1 p-6">
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="max-w-7xl mx-auto"
-        >
+        <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="text-center mb-6">
             <div className="flex items-center justify-center mb-3">
@@ -470,9 +404,7 @@ phone • email • website • github
 
           {/* Message Display */}
           {message && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
+            <div
               className={`mb-4 p-3 rounded-xl flex items-center space-x-3 ${
                 message.type === 'success' 
                   ? 'bg-green-500/10 border border-green-500/30 text-green-400'
@@ -485,17 +417,14 @@ phone • email • website • github
                 <AlertCircle className="w-4 h-4" />
               )}
               <span className="text-sm">{message.text}</span>
-            </motion.div>
+            </div>
           )}
 
 
           {/* Editor Layout */}
           <div className={`grid gap-6 ${showPreview ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {/* Editor Section */}
-            <motion.div
-              layout
-              className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden shadow-2xl"
-            >
+            <div className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
               <div className="border-b border-white/5 p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
@@ -513,11 +442,7 @@ phone • email • website • github
                   >
                     {isSaving ? (
                       <>
-                        <motion.div
-                          animate={{ rotate: 360 }}
-                          transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-                          className="w-3 h-3 border-2 border-black border-t-transparent rounded-full mr-2"
-                        />
+                        <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full mr-2 animate-spin" />
                         Saving...
                       </>
                     ) : (
@@ -541,17 +466,11 @@ phone • email • website • github
                   Use markdown formatting. Follow the structure: # Name, contact info, --- dividers, ### sections
                 </p>
               </div>
-            </motion.div>
+            </div>
 
             {/* Preview Section */}
             {showPreview && (
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                layout
-                className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden shadow-2xl"
-              >
+              <div className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
                 <div className="border-b border-white/5 p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -575,11 +494,7 @@ phone • email • website • github
                       >
                         {isGeneratingPDF ? (
                           <>
-                            <motion.div
-                              animate={{ rotate: 360 }}
-                              transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-                              className="w-3 h-3 border-2 border-black border-t-transparent rounded-full mr-1"
-                            />
+                            <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full mr-1 animate-spin" />
                             Generating...
                           </>
                         ) : (
@@ -596,12 +511,7 @@ phone • email • website • github
                   {isGeneratingPDF && (
                     <div className="mt-3">
                       <div className="bg-white/10 rounded-full h-1 overflow-hidden">
-                        <motion.div
-                          className="h-full bg-gradient-to-r from-[#00FFAA] to-[#00DD99]"
-                          initial={{ width: 0 }}
-                          animate={{ width: "100%" }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        />
+                        <div className="h-full bg-gradient-to-r from-[#00FFAA] to-[#00DD99] animate-pulse" />
                       </div>
                       <p className="text-xs text-gray-400 mt-1">
                         Generating PDF...
@@ -611,13 +521,9 @@ phone • email • website • github
                   
                   {/* Error message */}
                   {pdfError && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-xs text-red-400 mt-2"
-                    >
+                    <div className="text-xs text-red-400 mt-2">
                       PDF failed: {pdfError}. Downloading markdown instead...
-                    </motion.div>
+                    </div>
                   )}
                 </div>
                 
@@ -631,21 +537,16 @@ phone • email • website • github
                       color: '#111'
                     }}
                     dangerouslySetInnerHTML={{
-                      __html: renderMarkdownPreview(resumeContent)
+                      __html: renderedMarkdown
                     }}
                   />
                 </div>
-              </motion.div>
+              </div>
             )}
           </div>
 
           {/* ChatGPT Prompt Card */}
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-2xl p-6 mt-6 shadow-2xl"
-          >
+          <div className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-2xl p-6 mt-6 shadow-2xl">
             <div className="bg-white/5 border border-white/20 rounded-xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
@@ -688,8 +589,8 @@ phone • email • website • github
                 </div>
               </div>
             </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </div>
     </motion.div>
   )

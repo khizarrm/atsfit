@@ -64,6 +64,8 @@ Underline quantifiable metrics.
 
 Format bullet points with a '-'
 
+When converting, do not add any visual seperators like '$' or '-' 
+
 When returning, ensure you do not modify any content whatsoever. 
 
 Resume follows below:

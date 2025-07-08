@@ -27,14 +27,13 @@ export async function annotateResume(resume_content: string, job_description: st
   return data;
 }
 
-export async function rewriteResume(suggestions_json: string, resume_md: string) {
+export async function rewriteResume(resume_md: string) {
   const res = await fetch(`${HOST_URL}/api/rewrite`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      suggestions_json,
       resume_md
     }),
   });

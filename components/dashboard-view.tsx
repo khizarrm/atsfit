@@ -176,7 +176,7 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
       setCurrentStep("Optimizing resume structure...")
       updateProgressSmooth(70)
       
-      const rewriteResult = await rewriteResume(annotateResult["annotated_resume"], resumeMd)
+      const rewriteResult = await rewriteResume(annotateResult["annotated_resume"])
       
       // Calculate final ATS score with the new optimized resume
       setCurrentStep("Calculating final ATS score...")
