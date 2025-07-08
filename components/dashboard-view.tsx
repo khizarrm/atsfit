@@ -387,7 +387,7 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
             strokeDasharray={strokeDasharray}
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
           />
         </svg>
         {/* Score text */}
@@ -456,7 +456,6 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
       className="min-h-screen flex flex-col"
     >
       <SharedHeader
-        showSettingsButton={true}
         onGoToProfile={onGoToProfile}
         onSignUp={onSignUp}
         user={user}
@@ -467,7 +466,7 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.1 }}
           className="w-full max-w-4xl"
         >
           {/* Always Visible Header */}
@@ -772,7 +771,7 @@ Examples:
       <motion.footer
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 1.0, duration: 0.6 }}
+        transition={{ delay: 0.3, duration: 0.3 }}
         className="text-center p-6 z-10"
       >
         <span className="text-gray-500 text-sm">Made by </span>

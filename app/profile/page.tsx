@@ -40,6 +40,7 @@ export default function ProfilePage() {
   const { user, loading, resumeMd, updateResumeCache } = useAuth()
   const router = useRouter()
   const [resumeContent, setResumeContent] = useState("")
+  const [hasInitialized, setHasInitialized] = useState(false)
   const [showPreview, setShowPreview] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -53,12 +54,13 @@ export default function ProfilePage() {
   const renderedMarkdown = useMemo(() => renderMarkdownPreview(resumeContent), [resumeContent])
 
   useEffect(() => {
-    // Initialize with cached resume content from AuthContext - instant load!
-    if (resumeMd) {
+    // Initialize immediately if we have data, regardless of loading state
+    if (resumeMd && !hasInitialized) {
       setResumeContent(resumeMd)
       setOriginalContent(resumeMd)
-    } else {
-      // No existing resume, set template
+      setHasInitialized(true)
+    } else if (!resumeMd && !loading && !hasInitialized) {
+      // Only show template if we're not loading and definitely have no resume
       const template = `# YOUR NAME
 
 phone • email • website • github
@@ -91,11 +93,13 @@ phone • email • website • github
       
       setResumeContent(template)
       setOriginalContent("")
+      setHasInitialized(true)
     }
-  }, [resumeMd])
+  }, [resumeMd, loading, hasInitialized])
 
   
-  if (loading) {
+  // Only show loading if we haven't initialized AND we don't have cached data
+  if (loading && !hasInitialized && !resumeMd) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -322,10 +326,9 @@ ___________________________________________________________`
       <SharedHeader
         title="Profile"
         leftContent={
-          <div className="flex items-center space-x-4 w-48">
-            <Button onClick={() => router.push("/")} variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
+          <div className="flex items-center space-x-4 w-24">
+            <Button onClick={() => router.push("/")} variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white" title="Back to Dashboard">
+              <ArrowLeft className="h-4 w-4" />
             </Button>
           </div>
         }

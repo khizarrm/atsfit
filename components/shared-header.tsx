@@ -3,14 +3,13 @@
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect, useRef } from "react"
-import { Settings, User, LogOut, ChevronDown, UserCog } from "lucide-react"
+import { User, LogOut, ChevronDown, UserCog } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 
 interface SharedHeaderProps {
   title?: string // Custom title, defaults to "ATSFit"
   leftContent?: React.ReactNode // Custom left content (like back button)
   rightContent?: React.ReactNode // Custom right content (overrides default profile dropdown)
-  showSettingsButton?: boolean // Show settings button
   onGoToProfile?: () => void // Profile navigation handler
   onSignUp?: () => void // Sign up handler for non-authenticated users
   user?: any | null // User object
@@ -20,7 +19,6 @@ export function SharedHeader({
   title = "Passr",
   leftContent,
   rightContent,
-  showSettingsButton = false,
   onGoToProfile,
   onSignUp,
   user
@@ -70,11 +68,6 @@ export function SharedHeader({
   // Default left content (empty to maintain centering)
   const defaultLeftContent = (
     <div className="flex items-center space-x-4 w-24"> {/* Fixed width for centering */}
-      {user && showSettingsButton && (
-        <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white">
-          <Settings className="h-5 w-5" />
-        </Button>
-      )}
     </div>
   )
 
@@ -167,7 +160,7 @@ export function SharedHeader({
     <motion.nav
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.2 }}
+      transition={{ delay: 0.05 }}
       className="flex items-center justify-between p-6 bg-white/3 backdrop-blur-xl border-b border-white/5"
     >
       {leftContent || defaultLeftContent}

@@ -62,12 +62,12 @@ export function renderMarkdownPreview(markdown: string): string {
           
           // Process plain URLs in the remaining text
           let processed = part
+          // Email addresses (process first to avoid conflicts)
+          processed = processed.replace(/\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b/g, '<a href="mailto:$1" style="color: #111; text-decoration: underline;">$1</a>')
           // Full URLs with protocol
           processed = processed.replace(/(https?:\/\/[^\s<>]+)/g, '<a href="$1" style="color: #111; text-decoration: underline;" target="_blank" rel="noopener noreferrer">$1</a>')
-          // Email addresses
-          processed = processed.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, '<a href="mailto:$1" style="color: #111; text-decoration: underline;">$1</a>')
-          // Domain paths (like github.com/username)
-          processed = processed.replace(/\b((?:www\.)?[a-zA-Z0-9.-]+\.(?:com|org|net|edu|gov|io|co|in|uk|ca)(?:\/[^\s<>]*)?)\b/g, '<a href="https://$1" style="color: #111; text-decoration: underline;" target="_blank" rel="noopener noreferrer">$1</a>')
+          // Domain paths (like github.com/username) - but avoid already processed emails
+          processed = processed.replace(/\b((?:www\.)?[a-zA-Z0-9.-]+\.(?:com|org|net|edu|gov|io|co|in|uk|ca)(?:\/[^\s<>]*)?)\b(?![^<]*<\/a>)/g, '<a href="https://$1" style="color: #111; text-decoration: underline;" target="_blank" rel="noopener noreferrer">$1</a>')
           
           return processed
         }).join('')

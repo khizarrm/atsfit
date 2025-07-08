@@ -115,7 +115,6 @@ export function ProfileView({ onBack, user }: ProfileViewProps) {
     >
       {/* Shared Header */}
       <SharedHeader
-        showSettingsButton={false}
         onGoToProfile={() => {}} // Current page is profile
         onSignUp={() => {}}
         user={user}

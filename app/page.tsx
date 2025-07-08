@@ -55,6 +55,7 @@ export default function ATSFitApp() {
   /* ------------------------------- State --------------------------------- */
   const [currentState, setCurrentState] = useState<AppState>("login")
   const [user, setUser] = useState<User | null>(null)
+  const [hasInitialized, setHasInitialized] = useState(false)
   const router = useRouter()
 
   /* ----------------------------- Lifecycle ------------------------------ */
@@ -64,31 +65,31 @@ export default function ATSFitApp() {
   const { user: authUser, loading: authLoading, hasResume } = useAuth()
   
   useEffect(() => {
-    if (!authLoading) {
-      if (authUser) {
-        // User is logged in - use AuthContext user data
-        const userData = {
-          id: authUser.id,
-          email: authUser.email!,
-          name: authUser.user_metadata?.full_name || authUser.email!,
-        }
-        setUser(userData)
-        
-        // Check AuthContext for resume data to route appropriately
-        if (hasResume) {
-          console.log("Resume found, going to dashboard")
-          setCurrentState("dashboard")
-        } else {
-          console.log("No resume found, redirecting to setup")
-          setCurrentState("resume-setup")
-        }
-      } else {
-        // User is logged out
-        setUser(null)
-        setCurrentState("login")
+    // Initialize immediately if we have auth data, regardless of loading state
+    if (authUser && !hasInitialized) {
+      const userData = {
+        id: authUser.id,
+        email: authUser.email!,
+        name: authUser.user_metadata?.full_name || authUser.email!,
       }
+      setUser(userData)
+      
+      // Check AuthContext for resume data to route appropriately
+      if (hasResume) {
+        console.log("Resume found, going to dashboard")
+        setCurrentState("dashboard")
+      } else {
+        console.log("No resume found, redirecting to setup")
+        setCurrentState("resume-setup")
+      }
+      setHasInitialized(true)
+    } else if (!authUser && !authLoading && !hasInitialized) {
+      // Only set login state if we're definitely not loading and have no user
+      setUser(null)
+      setCurrentState("login")
+      setHasInitialized(true)
     }
-  }, [authUser, authLoading, hasResume])
+  }, [authUser, authLoading, hasResume, hasInitialized])
 
   // No state persistence - let users navigate naturally without memory
 
@@ -135,8 +136,8 @@ export default function ATSFitApp() {
 
   /* ------------------------------ Render ------------------------------- */
   
-  // Show minimal loading screen while auth is initializing - but only briefly
-  if (authLoading) {
+  // Only show loading if we haven't initialized AND we don't have cached user data
+  if (authLoading && !hasInitialized && !authUser) {
     return (
       <div className="min-h-screen bg-black relative text-white flex items-center justify-center">
         <Suspense fallback={<BackgroundFallback />}>
