@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, Suspense, lazy } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 
 // Views
@@ -10,6 +10,9 @@ import { ResumeSetupView } from "@/components/resume-setup-view"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { ResultsView } from "@/components/results-view"
+
+// Lazy load BackgroundGlow for better performance
+const BackgroundGlow = lazy(() => import('./BackgroundGlow'))
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -33,53 +36,13 @@ interface User {
 /* -------------------------------------------------------------------------- */
 
 /**
- * Animated neon‑green background used across the app.
+ * Simple fallback background while BackgroundGlow loads
  */
-function BackgroundGlow() {
+function BackgroundFallback() {
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none">
-      {/* Central radial glow */}
+      {/* Static central radial glow */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,255,170,0.15)_0%,rgba(0,255,170,0.08)_25%,rgba(0,255,170,0.03)_50%,transparent_70%)]" />
-
-      {/* Animated flowing streams */}
-      <motion.div
-        className="absolute inset-0"
-        animate={{
-          background: [
-            "radial-gradient(ellipse_800px_400px_at_20%_30%, rgba(0,255,170,0.1), transparent)",
-            "radial-gradient(ellipse_800px_400px_at_80%_70%, rgba(0,255,170,0.1), transparent)",
-            "radial-gradient(ellipse_800px_400px_at_40%_80%, rgba(0,255,170,0.1), transparent)",
-            "radial-gradient(ellipse_800px_400px_at_60%_20%, rgba(0,255,170,0.1), transparent)",
-            "radial-gradient(ellipse_800px_400px_at_20%_30%, rgba(0,255,170,0.1), transparent)",
-          ],
-        }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      {/* Pulsing edge glows */}
-      <motion.div
-        className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#00FFAA] to-transparent opacity-30"
-        animate={{ opacity: [0.2, 0.6, 0.2], scaleX: [0.8, 1.2, 0.8] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      <motion.div
-        className="absolute bottom-0 right-0 w-full h-px bg-gradient-to-l from-transparent via-[#00FFAA] to-transparent opacity-30"
-        animate={{ opacity: [0.2, 0.6, 0.2], scaleX: [0.8, 1.2, 0.8] }}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-      />
-
-      {/* Corner accent glows */}
-      <motion.div
-        className="absolute top-0 left-0 w-96 h-96 bg-[radial-gradient(circle,rgba(0,255,170,0.08),transparent_70%)]"
-        animate={{ opacity: [0.3, 0.7, 0.3], scale: [0.8, 1.1, 0.8] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="absolute bottom-0 right-0 w-96 h-96 bg-[radial-gradient(circle,rgba(0,255,170,0.08),transparent_70%)]"
-        animate={{ opacity: [0.3, 0.7, 0.3], scale: [0.8, 1.1, 0.8] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-      />
     </div>
   )
 }
@@ -172,18 +135,20 @@ export default function ATSFitApp() {
 
   /* ------------------------------ Render ------------------------------- */
   
-  // Show loading screen while auth is initializing
+  // Show minimal loading screen while auth is initializing - but only briefly
   if (authLoading) {
     return (
       <div className="min-h-screen bg-black relative text-white flex items-center justify-center">
-        <BackgroundGlow />
+        <Suspense fallback={<BackgroundFallback />}>
+          <BackgroundGlow />
+        </Suspense>
         <div className="text-center">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-            className="w-8 h-8 border-2 border-[#00FFAA] border-t-transparent rounded-full mx-auto mb-4"
+            className="w-6 h-6 border-2 border-[#00FFAA] border-t-transparent rounded-full mx-auto mb-3"
           />
-          <p className="text-gray-400">Initializing...</p>
+          <p className="text-gray-400 text-sm">Loading...</p>
         </div>
       </div>
     )
@@ -191,7 +156,9 @@ export default function ATSFitApp() {
   
   return (
     <div className="min-h-screen bg-black relative text-white">
-      <BackgroundGlow />
+      <Suspense fallback={<BackgroundFallback />}>
+        <BackgroundGlow />
+      </Suspense>
       <AnimatePresence mode="sync">{renderView()}</AnimatePresence>
     </div>
   )

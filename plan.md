@@ -1,99 +1,147 @@
-# Resume State Management Update Plan
+# Dashboard Performance Optimization Plan
 
-## Current State Analysis
+## Problem Analysis
 
-Based on the codebase analysis, I've identified the current authentication and resume flow:
+The project has significant performance issues with the initialization screen:
 
-### Current Architecture:
-- **AuthContext** (`contexts/auth-context.tsx`) manages authentication and resume state
-- **Resume state** is tracked via `hasResume` boolean and `resumeMd` content
-- **Database** has a new `has_resume` boolean field in the user table (as mentioned)
-- **Main routing** (`app/page.tsx`) checks `hasResume` to determine user flow
+1. **Blocking Authentication Flow**: All users (including anonymous) see "Initializing..." while waiting for:
+   - Supabase session initialization (`contexts/auth-context.tsx:109`)
+   - Database calls to fetch user profile (`contexts/auth-context.tsx:33`)
+   - Database calls to fetch resume content (`contexts/auth-context.tsx:48`)
 
-### Current Issue:
-The system currently fetches the full resume content from the `resumes` table to determine if a user has a resume, but now that there's a `has_resume` boolean in the user table, we should use that instead for better performance and smoother UX.
+2. **Unnecessary Database Operations**: Even anonymous users trigger database calls during auth initialization
 
-## Proposed Changes
+3. **Sequential Operations**: Auth context makes multiple sequential database calls instead of parallel operations
 
-### 1. Update AuthContext to Use Database `has_resume` Field
-**File:** `contexts/auth-context.tsx`
+4. **No Caching**: No client-side caching of authentication state for returning users
 
-**Changes:**
-- Modify the authentication flow to fetch user profile data including `has_resume` boolean
-- Update `hasResume` state to be set from the database field instead of checking resume content existence
-- Keep the existing `resumeMd` lazy-loading for when it's actually needed (like in dashboard)
-- Add a function to update the `has_resume` field when resume is saved/deleted
+5. **Heavy UI Components**: Multiple animated elements in BackgroundGlow load immediately
 
-### 2. Update Resume Operations to Sync Boolean Field
-**File:** `lib/database/resume-operations.ts`
+## Performance Optimization Strategy
 
-**Changes:**
-- Modify `saveUserResume()` to also update the `has_resume` boolean to `true` in the user table
-- Add a new function to update user's `has_resume` status
-- Ensure both tables stay in sync when resume is saved or deleted
+### Phase 1: Immediate Optimizations (Critical)
 
-### 3. Update Resume Setup Flow
-**File:** `components/resume-setup-view.tsx`
+#### 1.1 Optimize Auth Context Loading
+- **Issue**: `contexts/auth-context.tsx` blocks app with loading=true until all data is fetched
+- **Solution**: 
+  - Make session check non-blocking for anonymous users
+  - Only fetch profile/resume data after confirmed authentication
+  - Use optimistic loading states
 
-**Changes:**
-- After successful resume save, update the user's `has_resume` boolean
-- Refresh the auth context to reflect the new status
-- Ensure smooth transition to dashboard after setup
+#### 1.2 Defer Database Calls
+- **Issue**: Database calls happen on every page load
+- **Solution**: 
+  - Skip profile/resume fetching for anonymous users
+  - Add early return in `fetchUserDataOnAuth` if no session
 
-### 4. Fix Main App Routing Logic
-**File:** `app/page.tsx`
+#### 1.3 Optimize Database Operations
+- **Issue**: Sequential database calls in `fetchUserDataOnAuth`
+- **Solution**: Operations are already parallel (Promise.all), but add timeout handling
 
-**Changes:**
-- Fix the routing logic to properly direct users without resumes to the setup view
-- Ensure the flow is: Login → Check `has_resume` → Route to Setup or Dashboard
+### Phase 2: Caching & State Management
+
+#### 2.1 Add Authentication State Caching
+- **Files**: `contexts/auth-context.tsx`
+- **Solution**: 
+  - Cache auth state in sessionStorage
+  - Add stale-while-revalidate pattern
+  - Implement proper cache invalidation
+
+#### 2.2 Lazy Load Heavy Components
+- **Files**: `app/page.tsx` (BackgroundGlow)
+- **Solution**: 
+  - Use React.lazy for BackgroundGlow
+  - Add Suspense boundaries
+  - Consider CSS-only animations for critical path
+
+### Phase 3: UI/UX Improvements
+
+#### 3.1 Progressive Loading States
+- **Files**: `app/page.tsx`
+- **Solution**: 
+  - Show login form immediately for anonymous users
+  - Add skeleton states for authenticated users
+  - Remove blocking "Initializing..." screen
+
+#### 3.2 Optimize Loading Components
+- **Files**: `components/LoadingProgress.tsx`
+- **Solution**: 
+  - Reduce animation complexity
+  - Use CSS animations instead of JS
+  - Add loading state deduplication
+
+### Phase 4: Advanced Optimizations
+
+#### 4.1 Connection Pooling & Retries
+- **Files**: `lib/supabase.ts`
+- **Solution**: 
+  - Add connection retry logic
+  - Implement exponential backoff
+  - Add timeout configuration
+
+#### 4.2 Preloading & Prefetching
+- **Solution**: 
+  - Preload critical resources
+  - Add service worker for offline support
+  - Implement background sync
 
 ## Implementation Steps
 
-### Step 1: Update Database Operations
-- Add function to update user's `has_resume` field
-- Modify `saveUserResume()` to update both tables atomically
-- Add function to get user profile data including `has_resume`
+### Step 1: Fix Auth Context (Priority: Critical)
+1. Modify `contexts/auth-context.tsx`:
+   - Remove blocking loading state for anonymous users
+   - Add early returns for unauthenticated sessions
+   - Implement progressive data fetching
 
-### Step 2: Update AuthContext
-- Add user profile fetching on authentication
-- Set `hasResume` from database boolean field
-- Keep `resumeMd` lazy-loading for performance
-- Add function to sync `has_resume` field
+### Step 2: Optimize Main App Flow (Priority: High)
+1. Update `app/page.tsx`:
+   - Remove mandatory "Initializing..." screen
+   - Show appropriate view based on auth state
+   - Add proper error boundaries
 
-### Step 3: Update Resume Setup Component
-- Ensure it updates the `has_resume` boolean on successful save
-- Refresh auth context after resume setup completion
+### Step 3: Add Caching Layer (Priority: Medium)
+1. Implement session storage caching
+2. Add cache invalidation strategies
+3. Optimize re-authentication flow
 
-### Step 4: Fix App Routing
-- Correct the routing logic to use setup view when `hasResume` is false
-- Ensure smooth flow from authentication to appropriate view
+### Step 4: UI Performance (Priority: Medium)
+1. Lazy load BackgroundGlow component
+2. Optimize animation performance
+3. Add skeleton loading states
 
-### Step 5: Test the Complete Flow
-- Test authentication with existing resume
-- Test authentication without resume (should go to setup)
-- Test resume setup completion (should go to dashboard)
-- Verify state consistency across all components
+### Step 5: Testing & Validation (Priority: High)
+1. Test anonymous user flow
+2. Test authenticated user flow
+3. Measure performance improvements
+4. Add error handling tests
 
-## Benefits of This Approach
+## Expected Outcomes
 
-1. **Better Performance**: No need to fetch full resume content just to check existence
-2. **Smoother UX**: Immediate routing decisions based on boolean field
-3. **Consistency**: Single source of truth for resume existence
-4. **Scalability**: Better for when user base grows
+- **Anonymous users**: Immediate login form display (0-100ms)
+- **Authenticated users**: Progressive loading with skeleton states
+- **Database calls**: Reduced from 2-3 to 0-1 for typical flows
+- **Time to interactive**: Reduced from 1-3 seconds to 100-500ms
+- **User experience**: No more "forever loading" screens
 
-## Files to be Modified
+## Potential Challenges
 
-1. `contexts/auth-context.tsx` - Update authentication state management
-2. `lib/database/resume-operations.ts` - Add user profile operations
-3. `components/resume-setup-view.tsx` - Update save flow
-4. `app/page.tsx` - Fix routing logic
+1. **Session persistence**: Ensuring proper auth state restoration
+2. **Cache invalidation**: Handling stale data scenarios
+3. **Error handling**: Graceful degradation for network issues
+4. **Testing**: Comprehensive coverage of auth flows
 
-## Assumptions
+## Files to Modify
 
-- The user table now has a `has_resume` boolean field
-- The field is properly indexed and maintained
-- Existing users have this field populated correctly
+1. `contexts/auth-context.tsx` - Core auth optimization
+2. `app/page.tsx` - Main app flow
+3. `lib/supabase.ts` - Connection configuration
+4. `components/LoadingProgress.tsx` - Loading states
+5. `lib/database/resume-operations.ts` - Database operations
 
-## Timeline
+## Success Metrics
 
-This should be a relatively quick update (1-2 hours) since the infrastructure is already in place - we're just optimizing the data fetching and state management approach.
+- First Contentful Paint: < 500ms
+- Time to Interactive: < 1 second
+- Anonymous user loading: < 100ms
+- Authenticated user loading: < 800ms
+- Database calls per session: < 2

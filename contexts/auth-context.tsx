@@ -28,6 +28,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [resumeMd, setResumeMd] = useState<string | null>(null)
   const [hasResume, setHasResume] = useState(false)
 
+  // Cache keys for sessionStorage
+  const CACHE_KEYS = {
+    AUTH_STATE: 'atsfit_auth_state',
+    USER_PROFILE: 'atsfit_user_profile',
+    RESUME_MD: 'atsfit_resume_md'
+  }
+
+  // Helper functions for caching
+  const cacheAuthState = (user: User | null, hasResume: boolean) => {
+    try {
+      const cacheData = {
+        user,
+        hasResume,
+        timestamp: Date.now()
+      }
+      sessionStorage.setItem(CACHE_KEYS.AUTH_STATE, JSON.stringify(cacheData))
+    } catch (error) {
+      console.error('Error caching auth state:', error)
+    }
+  }
+
+  const getCachedAuthState = () => {
+    try {
+      const cached = sessionStorage.getItem(CACHE_KEYS.AUTH_STATE)
+      if (cached) {
+        const data = JSON.parse(cached)
+        // Cache expires after 5 minutes
+        if (Date.now() - data.timestamp < 5 * 60 * 1000) {
+          return data
+        }
+      }
+    } catch (error) {
+      console.error('Error reading cached auth state:', error)
+    }
+    return null
+  }
+
+  const clearAuthCache = () => {
+    try {
+      sessionStorage.removeItem(CACHE_KEYS.AUTH_STATE)
+      sessionStorage.removeItem(CACHE_KEYS.USER_PROFILE)
+      sessionStorage.removeItem(CACHE_KEYS.RESUME_MD)
+    } catch (error) {
+      console.error('Error clearing auth cache:', error)
+    }
+  }
+
   const fetchUserProfile = async () => {
     try {
       const { has_resume, error } = await getUserProfile()
@@ -70,8 +117,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchUserDataOnAuth = async (userId: string) => {
     try {
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Database operation timed out')), 10000) // 10 second timeout
+      })
+
       // Fetch both profile and resume content in parallel for better UX
-      const [profileResult, resumeResult] = await Promise.all([
+      const dataPromise = Promise.all([
         getUserProfile(),
         supabase
           .from('resumes')
@@ -81,6 +133,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .limit(1)
           .maybeSingle()
       ])
+
+      const [profileResult, resumeResult] = await Promise.race([
+        dataPromise,
+        timeoutPromise
+      ]) as [any, any]
 
       // Update profile state
       if (profileResult.error) {
@@ -99,27 +156,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Error fetching user data:', error)
+      // Set fallback values to prevent app from breaking
       setHasResume(false)
       setResumeMd(null)
     }
   }
 
   useEffect(() => {
+    // Try to load cached auth state first for immediate response
+    const cachedAuth = getCachedAuthState()
+    if (cachedAuth) {
+      setUser(cachedAuth.user)
+      setHasResume(cachedAuth.hasResume)
+      // Still need to verify with server, but user sees immediate response
+    }
+
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
+      
       if (session?.user) {
         // Fetch both user profile and resume content for caching
-        fetchUserDataOnAuth(session.user.id).finally(() => setLoading(false))
+        fetchUserDataOnAuth(session.user.id).finally(() => {
+          setLoading(false)
+          // Cache the auth state after successful fetch
+          cacheAuthState(session.user, hasResume)
+        })
       } else {
+        // For anonymous users, immediately clear state and stop loading
         setHasResume(false)
         setResumeMd(null)
         setLoading(false)
+        clearAuthCache()
       }
     }).catch((error) => {
       console.error('Auth session error:', error)
+      // Set loading to false even on error to prevent infinite loading
+      setHasResume(false)
+      setResumeMd(null)
       setLoading(false)
+      clearAuthCache()
     })
 
     // Listen for auth changes
@@ -128,14 +205,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session)
       setUser(session?.user ?? null)
+      
       if (session?.user) {
         // On sign in, cache both profile and resume data
-        fetchUserDataOnAuth(session.user.id).finally(() => setLoading(false))
+        setLoading(true) // Set loading only for authenticated users
+        fetchUserDataOnAuth(session.user.id).finally(() => {
+          setLoading(false)
+          // Cache the updated auth state
+          cacheAuthState(session.user, hasResume)
+        })
       } else {
-        // On sign out, clear all cached data
+        // On sign out, clear all cached data immediately
         setHasResume(false)
         setResumeMd(null)
         setLoading(false)
+        clearAuthCache()
       }
     })
 
