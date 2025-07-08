@@ -17,7 +17,7 @@ interface SharedHeaderProps {
 }
 
 export function SharedHeader({ 
-  title = "ATSFit",
+  title = "Passr",
   leftContent,
   rightContent,
   showSettingsButton = false,

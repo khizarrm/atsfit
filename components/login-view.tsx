@@ -113,7 +113,7 @@ export function LoginView({ onLogin }: LoginViewProps) {
           className="mb-8"
         >
           <h1 className="text-6xl font-bold bg-gradient-to-r from-[#00FFAA] to-[#00CC88] bg-clip-text text-transparent mb-4">
-            ATSFit
+            Passr
           </h1>
           <p className="text-gray-300 text-xl mb-2">AI-Powered Resume Optimization</p>
           <p className="text-gray-400 text-lg">Get your resume past ATS systems with intelligent optimization</p>

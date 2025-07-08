@@ -7,7 +7,7 @@ import { AuthProvider } from "@/contexts/auth-context"
 const figtree = Figtree({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "ATSFit - AI Resume Optimization",
+  title: "Passr - AI Resume Optimization",
   description: "Optimize your resume with AI precision",
     generator: 'v0.dev'
 }
