@@ -85,7 +85,7 @@ export default function ATSFitApp() {
       setUser(null)
       setCurrentState("login")
     }
-  }, [authLoading, hasResume, router])
+  }, [authUser, authLoading, hasResume, router])
 
   // No state persistence - let users navigate naturally without memory
 

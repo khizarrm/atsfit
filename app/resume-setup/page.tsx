@@ -58,6 +58,7 @@ Do not add a newline for job titiles and company names: keep both on the same li
 When addings links, add them appropriately as follows [text](url)
 
 Ensure all contact info text below the header is seperated with spaces using '$|$' in markdown
+** NOTE: For contact info, ensure there are only 3 pieces. If more, remove the least relevant one. **
 
 Only add urls where neccesary, never in random places
 
