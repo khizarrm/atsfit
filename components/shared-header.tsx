@@ -4,7 +4,7 @@ import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect, useRef } from "react"
 import { User, LogOut, ChevronDown, UserCog } from "lucide-react"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth } from "@/stores/hooks/useAuth"
 
 interface SharedHeaderProps {
   title?: string // Custom title, defaults to "ATSFit"
