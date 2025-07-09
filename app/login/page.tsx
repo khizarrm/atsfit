@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { UserPlus, Zap, Target, TrendingUp, CheckCircle, X, Mail, Lock } from "lucide-react"
 import { useState } from "react"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth } from "@/stores/hooks/useAuth"
 import { useRouter } from "next/navigation"
 
 function BackgroundGlow() {

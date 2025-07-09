@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Check, Shield, Zap, Clock, Code, Type } from "lucide-react"
 import { useState } from "react"
 import { Textarea } from "@/components/ui/textarea"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth } from "@/stores/hooks/useAuth"
 import { supabase } from "@/lib/supabase"
 
 interface UploadViewProps {

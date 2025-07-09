@@ -2,7 +2,7 @@
 
 import { useEffect, Suspense, lazy } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth } from "@/stores/hooks/useAuth"
 import { DashboardView } from "@/components/dashboard-view"
 import { motion } from "framer-motion"
 

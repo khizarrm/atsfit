@@ -4,7 +4,7 @@ import { motion } from "framer-motion"
 import { useEffect, useState } from "react"
 import { Brain } from "lucide-react"
 import { fetchJobResearch, annotateResume, rewriteResume } from "@/lib/api"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth } from "@/stores/hooks/useAuth"
 
 interface ThinkingViewProps {
   onComplete: (result: string) => void

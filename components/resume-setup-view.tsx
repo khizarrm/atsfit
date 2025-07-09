@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useState } from "react"
 import { Check, Copy, FileText, ArrowRight, User } from "lucide-react"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth } from "@/stores/hooks/useAuth"
 import { saveUserResume, validateResumeContent } from "@/lib/database/resume-operations"
 import { SharedHeader } from "@/components/shared-header"
 

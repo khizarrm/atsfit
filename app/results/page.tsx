@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { useState, useEffect, Suspense } from "react"
 import { ArrowLeft, AlertCircle } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth } from "@/stores/hooks/useAuth"
 import { generatePDFCSS, PREVIEW_CONTAINER_STYLES } from "@/lib/utils/preview-renderer"
 import { ResultsView } from "@/components/results-view"
 

@@ -6,8 +6,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { useState, useEffect } from "react"
 import { ArrowLeft, Save, Eye, EyeOff, User, FileText, CheckCircle, AlertCircle, Download, Copy } from "lucide-react"
 import { Resume } from "@/lib/database/resume-operations"
-import { useAuth } from "@/contexts/auth-context"
-import { getUserResume, saveUserResume, validateResumeContent } from "@/lib/database/resume-operations"
+import { useAuth } from "@/stores/hooks/useAuth"
+import { useResumeManager } from "@/stores/hooks/useResumeManager"
+import { useUIStore } from "@/stores/index"
+// Resume operations now handled by store
 import { SharedHeader } from "@/components/shared-header"
 import { generatePDF } from "@/lib/api"
 import { renderMarkdownPreview } from "@/lib/utils/preview-renderer"
@@ -25,16 +27,25 @@ interface ProfileViewProps {
 
 export function ProfileView({ onBack, user }: ProfileViewProps) {
   const { refreshResume } = useAuth()
-  const [resumeContent, setResumeContent] = useState("")
+  
+  // Resume Store Integration
+  const [resumeState, resumeActions] = useResumeManager(user?.id || null)
+  const { content: resumeContent, isDirty: hasChanges, loadingState } = resumeState
+  const { updateContent, saveResume, resetToOriginal } = resumeActions
+  
+  // UI Store Integration
+  const showSuccess = useUIStore(state => state.actions.showSuccess)
+  const showError = useUIStore(state => state.actions.showError)
+  
+  // Local component state (UI-only)
   const [showPreview, setShowPreview] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
-  const [hasChanges, setHasChanges] = useState(false)
-  const [originalContent, setOriginalContent] = useState("")
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [pdfError, setPdfError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  
+  // Derived state from store
+  const isLoading = loadingState === 'loading'
+  const isSaving = loadingState === 'saving'
 
   const chatGPTPrompt = 
 
@@ -71,134 +82,36 @@ When returning, ensure you do not modify any content whatsoever.
 Resume follows below:
 ___________________________________________________________`
 
-  // Load user's existing resume
-  useEffect(() => {
-    if (user) {
-      loadUserResume()
-    }
-  }, [])
-
-  const loadUserResume = async () => {
-    try {
-      setIsLoading(true)
-      
-      if (!user) {
-        setIsLoading(false)
-        return
-      }
-
-      // Add timeout to prevent stuck loading
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Request timed out')), 10000)
-      )
-      
-      const result = await Promise.race([
-        getUserResume(user.id),
-        timeoutPromise
-      ]) as any
-      console.log('getUserResume result:', result)
-
-      if (result.success && result.data) {
-        setResumeContent(result.data.resume_md)
-        setOriginalContent(result.data.resume_md)
-      } else {
-        // No existing resume, set template
-        const template = `# YOUR NAME
-
-phone • email • website • github
-
----
-
-### EDUCATION
-
-#### University Name, City, State
-*Degree Title* | Month Year - Month Year | GPA: X.X/4.0  
-**Relevant Coursework:** Course 1, Course 2, Course 3
-
----
-
-### EXPERIENCE
-
-#### Job Title - Company Name
-*Month Year - Month Year*
-- Achievement or responsibility here
-- Another achievement with metrics
-- Third point about impact
-
----
-
-### SKILLS
-
-**Programming Languages:** Language1, Language2, Language3  
-**Frameworks:** Framework1, Framework2  
-**Tools:** Tool1, Tool2, Tool3`
-        
-        setResumeContent(template)
-        setOriginalContent("")
-      }
-    } catch (error) {
-      console.error('Error loading resume:', error)
-      showMessage('error', 'Failed to load resume')
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  // Resume loading is now handled by the store automatically
 
   const handleContentChange = (value: string) => {
-    setResumeContent(value)
-    setHasChanges(value !== originalContent)
-    // Clear any existing messages when user starts typing
-    if (message) {
-      setMessage(null)
-    }
+    updateContent(value)
+    // Messages are now handled by toast notifications
   }
 
   const handleSave = async () => {
     if (!user || !resumeContent.trim()) {
-      showMessage('error', 'Please enter resume content')
-      return
-    }
-
-    // Validate content first
-    const validation = validateResumeContent(resumeContent)
-    if (!validation.valid) {
-      showMessage('error', validation.error || 'Invalid resume content')
+      showError('Please enter resume content')
       return
     }
 
     try {
-      setIsSaving(true)
+      await saveResume()
+      showSuccess('Resume saved successfully!')
       
-      const result = await saveUserResume(user.id, resumeContent)
-      console.log('saveUserResume result:', result)
-
-      if (result.success) {
-        setOriginalContent(resumeContent)
-        setHasChanges(false)
-        showMessage('success', 'Resume saved successfully!')
-        
-        // Refresh the resume in auth context so dashboard gets updated data
-        await refreshResume()
-      } else {
-        showMessage('error', result.error || 'Failed to save resume')
-      }
+      // Refresh the resume in auth context so dashboard gets updated data
+      await refreshResume()
     } catch (error) {
       console.error('Error saving resume:', error)
-      console.error('Error details:', error)
-      showMessage('error', `Failed to save resume: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    } finally {
-      setIsSaving(false)
+      showError(`Failed to save resume: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
-  const showMessage = (type: 'success' | 'error', text: string) => {
-    setMessage({ type, text })
-    setTimeout(() => setMessage(null), 5000)
-  }
+  // Messages are now handled by toast notifications
 
   const handleDownload = async () => {
     if (!resumeContent.trim()) {
-      showMessage('error', 'No resume content to download')
+      showError('No resume content to download')
       return
     }
     
@@ -221,6 +134,7 @@ phone • email • website • github
       console.error('PDF generation failed:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
       setPdfError(errorMessage)
+      showError(`PDF generation failed: ${errorMessage}. Downloading markdown instead.`)
       
       // Fallback to markdown download
       setTimeout(() => {
@@ -430,25 +344,7 @@ phone • email • website • github
             </div>
           </div>
 
-          {/* Message Display */}
-          {message && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`mb-4 p-3 rounded-xl flex items-center space-x-3 ${
-                message.type === 'success' 
-                  ? 'bg-green-500/10 border border-green-500/30 text-green-400'
-                  : 'bg-red-500/10 border border-red-500/30 text-red-400'
-              }`}
-            >
-              {message.type === 'success' ? (
-                <CheckCircle className="w-4 h-4" />
-              ) : (
-                <AlertCircle className="w-4 h-4" />
-              )}
-              <span className="text-sm">{message.text}</span>
-            </motion.div>
-          )}
+          {/* Messages are now handled by toast notifications */}
 
 
           {/* Editor Layout */}
@@ -464,7 +360,17 @@ phone • email • website • github
                     <FileText className="w-4 h-4 text-[#00FFAA]" />
                     <h3 className="text-white font-semibold">Resume Editor</h3>
                   </div>
-                  <Button
+                  <div className="flex items-center space-x-2">
+                    {hasChanges && (
+                      <Button
+                        onClick={resetToOriginal}
+                        variant="outline"
+                        className="text-white border-white/20 hover:bg-white/10"
+                      >
+                        Reset
+                      </Button>
+                    )}
+                    <Button
                     onClick={handleSave}
                     disabled={isSaving || !hasChanges}
                     className={`font-semibold px-4 py-2 text-sm rounded-xl transition-all duration-300 ${
@@ -489,6 +395,7 @@ phone • email • website • github
                       </>
                     )}
                   </Button>
+                  </div>
                 </div>
               </div>
               

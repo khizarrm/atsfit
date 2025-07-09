@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 
 // Views
 import { useRouter, usePathname } from "next/navigation"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth } from "@/stores/hooks/useAuth"
 import LoginPage from "@/app/login/page"
 
 // Lazy load BackgroundGlow for better performance

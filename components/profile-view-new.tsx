@@ -7,8 +7,8 @@ import { SharedHeader } from "@/components/shared-header"
 import { ProfileHeader } from "@/components/profile/ProfileHeader"
 import { ResumeEditor } from "@/components/profile/ResumeEditor"
 import { ResumePreview } from "@/components/profile/ResumePreview"
-import { useResumeManager } from "@/hooks/useResumeManager"
-import { useAuth } from "@/contexts/auth-context"
+import { useResumeManager } from "@/stores/hooks/useResumeManager"
+import { useAuth } from "@/stores/hooks/useAuth"
 
 interface User {
   id: string

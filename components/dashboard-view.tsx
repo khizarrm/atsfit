@@ -7,7 +7,9 @@ import { useState, useEffect } from "react"
 import { Send, Info, Sparkles, ChevronDown } from "lucide-react"
 import { annotateResume, rewriteResume, AtsScoreResponse, extractKeywordsFromJobDescription } from "@/lib/api"
 import { calculateAtsScore, AtsScoreResult } from "@/lib/utils/ats-scorer"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth } from "@/stores/hooks/useAuth"
+import { useUIStore } from "@/stores/index"
+import { useResumeStore } from "@/stores/index"
 import { LoadingProgress } from "@/components/LoadingProgress"
 import { ResultsView } from "./results-view"
 import { type ResultsData } from "@/lib/utils/results-validation"
@@ -22,11 +24,26 @@ interface DashboardViewProps {
 
 export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewProps) {
   const { resumeMd } = useAuth()
+  
+  // UI Store
+  const showProgress = useUIStore(state => state.actions.showProgress)
+  const hideProgress = useUIStore(state => state.actions.hideProgress)
+  const showError = useUIStore(state => state.actions.showError)
+  const showSuccess = useUIStore(state => state.actions.showSuccess)
+  const progress = useUIStore(state => state.progress)
+  
+  // Resume Store
+  const keywords = useResumeStore(state => state.keywords)
+  const keywordsLoading = useResumeStore(state => state.keywordsLoading)
+  const keywordsError = useResumeStore(state => state.keywordsError)
+  const updateKeywords = useResumeStore(state => state.actions.updateKeywords)
+  const setKeywordsLoading = useResumeStore(state => state.actions.setKeywordsLoading)
+  const setKeywordsError = useResumeStore(state => state.actions.setKeywordsError)
+  
+  // Local component state (forms, temporary data)
   const [jobDescription, setJobDescription] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState("")
   const [buttonText] = useState("Start AI Optimization")
-  const [progress, setProgress] = useState(0)
   const [currentStep, setCurrentStep] = useState("")
   const [abortController, setAbortController] = useState<AbortController | null>(null)
   const [apiCheckpoints, setApiCheckpoints] = useState({ step1: false, step2: false, step3: false })
@@ -35,9 +52,6 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
   const [annotationData, setAnnotationData] = useState<any>(null)
   const [atsLoading, setAtsLoading] = useState(false)
   const [annotationLoading, setAnnotationLoading] = useState(false)
-  const [keywords, setKeywords] = useState<string[]>([])
-  const [keywordsLoading, setKeywordsLoading] = useState(false)
-  const [keywordsError, setKeywordsError] = useState("")
   const [currentAtsResult, setCurrentAtsResult] = useState<AtsScoreResult | null>(null)
   const [userNotes, setUserNotes] = useState("")
   
@@ -68,7 +82,7 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
     }
     
     // Smooth animation to target progress
-    const currentProgress = progress
+    const currentProgress = progress.value
     const steps = Math.abs(targetProgress - currentProgress)
     const stepSize = (targetProgress - currentProgress) / Math.max(steps / 2, 1)
     
@@ -78,11 +92,11 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
       const newProgress = currentProgress + (stepSize * step)
       
       if ((stepSize > 0 && newProgress >= targetProgress) || (stepSize < 0 && newProgress <= targetProgress)) {
-        setProgress(targetProgress)
+        showProgress(targetProgress, currentStep)
         clearInterval(interval)
         setProgressInterval(null)
       } else {
-        setProgress(newProgress)
+        showProgress(newProgress, currentStep)
       }
     }, 50) // Smooth 50ms intervals
     
@@ -123,7 +137,7 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
     if (!jobDescription.trim()) return
 
     if (!resumeMd) {
-      setError("Please upload your resume first.")
+      showError("Please upload your resume first.")
       return
     }
 
@@ -132,8 +146,7 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
     setAbortController(controller)
     
     setIsSubmitting(true)
-    setError("")
-    setProgress(0)
+    showProgress(0, "Starting optimization...")
     setApiCheckpoints({ step1: false, step2: false, step3: false })
     
     try {
@@ -212,12 +225,12 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         // Handle cancellation
-        setError("Optimization cancelled.")
+        showError("Optimization cancelled.")
         setCurrentStep("Cancelled")
-        setProgress(0)
+        hideProgress()
       } else {
         console.error("Error during optimization:", err)
-        setError("Failed to complete optimization. Please try again.")
+        showError("Failed to complete optimization. Please try again.")
         setCurrentStep("Error occurred")
       }
     } finally {
@@ -230,7 +243,7 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
     if (abortController) {
       abortController.abort()
       setCurrentStep("Cancelling...")
-      setProgress(0)
+      hideProgress()
       
       // Clear any ongoing progress animation
       if (progressInterval) {
@@ -242,10 +255,10 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
       setTimeout(() => {
         setIsSubmitting(false)
         setCurrentStep("")
-        setError("")
         setAbortController(null)
         setApiCheckpoints({ step1: false, step2: false, step3: false })
         setAtsLoading(false)
+        hideProgress()
         setAnnotationLoading(false)
       }, 800)
     }
@@ -254,7 +267,7 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
 
   const handleRemoveKeyword = (indexToRemove: number) => {
     const updatedKeywords = keywords.filter((_, index) => index !== indexToRemove)
-    setKeywords(updatedKeywords)
+    updateKeywords(updatedKeywords)
     
     // Recalculate ATS score with updated keywords
     if (resumeMd && updatedKeywords.length > 0) {
@@ -275,7 +288,7 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
     if (editingKeywordIndex !== null && editingKeywordValue.trim()) {
       const updatedKeywords = [...keywords]
       updatedKeywords[editingKeywordIndex] = editingKeywordValue.trim()
-      setKeywords(updatedKeywords)
+      updateKeywords(updatedKeywords)
       
       // Recalculate ATS score with updated keywords
       if (resumeMd) {
@@ -297,7 +310,7 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
   // Extract keywords when job description changes (with debouncing)
   useEffect(() => {
     if (!jobDescription.trim()) {
-      setKeywords([])
+      updateKeywords([])
       setKeywordsError("")
       setCurrentAtsResult(null)
       return
@@ -309,7 +322,7 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
       
       try {
         const extractedKeywords = await extractKeywordsFromJobDescription(jobDescription.trim())
-        setKeywords(extractedKeywords)
+        updateKeywords(extractedKeywords)
         
         // Calculate ATS score immediately after keywords are extracted
         if (resumeMd && extractedKeywords.length > 0) {
@@ -323,7 +336,7 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
       } catch (error) {
         console.error("Keyword extraction failed:", error)
         setKeywordsError("Failed to extract keywords. Please try again.")
-        setKeywords([])
+        updateKeywords([])
         setCurrentAtsResult(null)
       } finally {
         setKeywordsLoading(false)
@@ -409,7 +422,7 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
     setShowResults(false)
     setOptimizationResults(null)
     setOptimizationComplete(false)
-    setProgress(0)
+    hideProgress()
     setCurrentStep("")
   }
 
@@ -519,7 +532,7 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
           {/* Conditional Rendering: Form or Loading Progress */}
           {isSubmitting ? (
             <LoadingProgress 
-              progress={progress}
+              progress={progress.value}
               currentStep={currentStep}
               onCancel={handleCancel}
               optimizationComplete={optimizationComplete}
@@ -531,12 +544,7 @@ export function DashboardView({ onSignUp, onGoToProfile, user }: DashboardViewPr
             />
           ) : (
             <div className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-3xl p-8 shadow-2xl space-y-6">
-            {/* Error Display */}
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3">
-                <p className="text-red-400 text-sm">{error}</p>
-              </div>
-            )}
+            {/* Error Display handled by toasts */}
 
 
 

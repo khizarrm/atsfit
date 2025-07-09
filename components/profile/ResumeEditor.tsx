@@ -3,7 +3,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { RotateCcw, AlertCircle } from "lucide-react"
 import { SaveStatus } from "./SaveStatus"
-import type { LoadingState } from "@/hooks/useResumeManager"
+import type { LoadingState } from "@/stores/hooks/useResumeManager"
 
 interface ResumeEditorProps {
   content: string
