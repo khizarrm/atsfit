@@ -25,6 +25,7 @@ export const useAuthStore = create<AuthSlice>()(
       storage: {
         getItem: (name) => {
           try {
+            if (typeof window === 'undefined') return null
             const item = sessionStorage.getItem(name)
             return item ? JSON.parse(item) : null
           } catch (error) {
@@ -34,6 +35,7 @@ export const useAuthStore = create<AuthSlice>()(
         },
         setItem: (name, value) => {
           try {
+            if (typeof window === 'undefined') return
             sessionStorage.setItem(name, JSON.stringify(value))
           } catch (error) {
             console.error('Error writing to sessionStorage:', error)
@@ -41,6 +43,7 @@ export const useAuthStore = create<AuthSlice>()(
         },
         removeItem: (name) => {
           try {
+            if (typeof window === 'undefined') return
             sessionStorage.removeItem(name)
           } catch (error) {
             console.error('Error removing from sessionStorage:', error)
@@ -70,6 +73,7 @@ export const useResumeStore = create<ResumeSlice>()(
       storage: {
         getItem: (name) => {
           try {
+            if (typeof window === 'undefined') return null
             const item = localStorage.getItem(name)
             return item ? JSON.parse(item) : null
           } catch (error) {
@@ -79,6 +83,7 @@ export const useResumeStore = create<ResumeSlice>()(
         },
         setItem: (name, value) => {
           try {
+            if (typeof window === 'undefined') return
             localStorage.setItem(name, JSON.stringify(value))
           } catch (error) {
             console.error('Error writing to localStorage:', error)
@@ -86,6 +91,7 @@ export const useResumeStore = create<ResumeSlice>()(
         },
         removeItem: (name) => {
           try {
+            if (typeof window === 'undefined') return
             localStorage.removeItem(name)
           } catch (error) {
             console.error('Error removing from localStorage:', error)
@@ -115,6 +121,7 @@ export const useUIStore = create<UISlice>()(
       storage: {
         getItem: (name) => {
           try {
+            if (typeof window === 'undefined') return null
             const item = localStorage.getItem(name)
             return item ? JSON.parse(item) : null
           } catch (error) {
@@ -124,6 +131,7 @@ export const useUIStore = create<UISlice>()(
         },
         setItem: (name, value) => {
           try {
+            if (typeof window === 'undefined') return
             localStorage.setItem(name, JSON.stringify(value))
           } catch (error) {
             console.error('Error writing to localStorage:', error)
@@ -131,6 +139,7 @@ export const useUIStore = create<UISlice>()(
         },
         removeItem: (name) => {
           try {
+            if (typeof window === 'undefined') return
             localStorage.removeItem(name)
           } catch (error) {
             console.error('Error removing from localStorage:', error)
