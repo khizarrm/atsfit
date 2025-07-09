@@ -131,6 +131,9 @@ ___________________________________________________________`
 
   // Show loading if user is not loaded yet
   if (!user) {
+    console.log("🔍 AUTH DEBUG: in setup", {
+      user
+    })
     return (
       <div className="min-h-screen bg-black relative text-white flex items-center justify-center">
         <Suspense fallback={<BackgroundFallback />}>

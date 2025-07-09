@@ -209,8 +209,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setHasResume(!!cachedData.resumeMd?.trim())
           setLoading(false)
         } else {
-          // No cache, fetch from database
-          setLoading(true)
           fetchUserDataOnAuth(session.user.id).finally(() => {
             setLoading(false)
           })

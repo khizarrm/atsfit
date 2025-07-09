@@ -45,7 +45,12 @@ export default function DashboardPage() {
   }, [authUser, authLoading, hasResume, router])
 
   // Show loading screen while checking authentication
-  if (authLoading || !authUser || !hasResume) {
+  if (authLoading) {
+    console.log("🔍 AUTH DEBUG in deshboard:", {
+      authUser: authUser ? { id: authUser.id, email: authUser.email } : null,
+      authLoading,
+      hasResume,
+    })
     return (
       <div className="min-h-screen bg-black relative text-white flex items-center justify-center">
         <Suspense fallback={<BackgroundFallback />}>
@@ -65,10 +70,12 @@ export default function DashboardPage() {
 
   // Map user data for DashboardView
   const mappedUser = {
-    id: authUser.id,
-    email: authUser.email!,
-    name: authUser.user_metadata?.full_name || authUser.email!,
+    id: authUser?.id,
+    email: authUser?.email!,
+    name: authUser?.user_metadata?.full_name || authUser.email!,
   }
+
+  console.log("Our user: ", mappedUser)
 
   return (
     <div className="min-h-screen bg-black relative text-white">

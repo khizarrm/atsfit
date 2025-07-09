@@ -78,7 +78,14 @@ export default function ATSFitApp() {
   /* ------------------------------ Render ------------------------------- */
   
   // Only show loading if auth is still loading
+  
   if (authLoading) {
+    console.log("🔍 AUTH DEBUG in auth loading:", {
+      authUser: authUser ? { id: authUser.id, email: authUser.email } : null,
+      authLoading,
+      hasResume,
+      pathname
+    })
     return (
       <div className="min-h-screen bg-black relative text-white flex items-center justify-center">
         <Suspense fallback={<BackgroundFallback />}>
