@@ -1,11 +1,10 @@
 "use client"
 
-import { useState, useEffect, useCallback, Suspense, lazy } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { useEffect, Suspense, lazy } from "react"
+import { motion } from "framer-motion"
 
 // Views
-import { DashboardView } from "@/components/dashboard-view"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import LoginPage from "@/app/login/page"
 
@@ -16,15 +15,7 @@ const BackgroundGlow = lazy(() => import('./BackgroundGlow'))
 /*                                   Types                                    */
 /* -------------------------------------------------------------------------- */
 
-type AppState =
-  | "login"
-  | "dashboard"
-
-interface User {
-  id: string
-  email: string
-  name: string
-}
+type AppState = "login"
 
 /* -------------------------------------------------------------------------- */
 /*                              Helper Components                             */
@@ -43,10 +34,8 @@ function BackgroundFallback() {
 }
 
 export default function ATSFitApp() {
-  /* ------------------------------- State --------------------------------- */
-  const [currentState, setCurrentState] = useState<AppState>("login")
-  const [user, setUser] = useState<User | null>(null)
   const router = useRouter()
+  const pathname = usePathname()
 
   /* ----------------------------- Lifecycle ------------------------------ */
   // Handle auth state changes using AuthContext data
@@ -57,24 +46,20 @@ export default function ATSFitApp() {
       authUser: authUser ? { id: authUser.id, email: authUser.email } : null,
       authLoading,
       hasResume,
-      currentState
+      pathname
     })
 
     // Wait for auth to finish loading before making decisions
     if (authLoading) return
 
+    // Only redirect if we're on the root path to avoid redirect loops
+    if (pathname !== "/") return
+
     if (authUser) {
-      const userData = {
-        id: authUser.id,
-        email: authUser.email!,
-        name: authUser.user_metadata?.full_name || authUser.email!,
-      }
-      setUser(userData)
-      
       // Check AuthContext for resume data to route appropriately
       if (hasResume) {
-        console.log("✅ Resume found, going to dashboard")
-        setCurrentState("dashboard")
+        console.log("✅ Resume found, redirecting to dashboard")
+        router.push("/dashboard")
       } else {
         console.log("❌ No resume found, redirecting to setup")
         router.push("/resume-setup")
@@ -82,33 +67,12 @@ export default function ATSFitApp() {
     } else {
       // No auth user, stay on login page
       console.log("🚫 No auth user, staying on login page")
-      setUser(null)
-      setCurrentState("login")
     }
-  }, [authLoading, hasResume, router])
+  }, [authUser, authLoading, hasResume, router, pathname])
 
-  // No state persistence - let users navigate naturally without memory
-
-  /* ------------------------------ Handlers ------------------------------ */
-  const goTo = useCallback((state: AppState) => setCurrentState(state), [])
-
-
-  /* ---------------------------- View Factory ---------------------------- */
+  // Show login page for unauthenticated users
   const renderView = () => {
-    switch (currentState) {
-      case "login":
-        return <LoginPage />
-      case "dashboard":
-        return (
-          <DashboardView
-            onSignUp={() => goTo("login")}
-            onGoToProfile={() => router.push("/profile")}
-            user={user}
-          />
-        )
-      default:
-        return null
-    }
+    return <LoginPage />
   }
 
   /* ------------------------------ Render ------------------------------- */
@@ -137,7 +101,7 @@ export default function ATSFitApp() {
       <Suspense fallback={<BackgroundFallback />}>
         <BackgroundGlow />
       </Suspense>
-      <AnimatePresence mode="sync">{renderView()}</AnimatePresence>
+      {renderView()}
     </div>
   )
 }
