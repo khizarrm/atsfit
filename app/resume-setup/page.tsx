@@ -10,8 +10,8 @@ import { saveUserResume, validateResumeContent } from "@/lib/database/resume-ope
 import { SharedHeader } from "@/components/shared-header"
 import { useRouter } from "next/navigation"
 
-// Lazy load BackgroundGlow for better performance
-const BackgroundGlow = lazy(() => import('../BackgroundGlow'))
+const BackgroundGlow = lazy(() => import('@/components/BackgroundGlow'))
+
 
 export default function ResumeSetupPage() {
   const router = useRouter()

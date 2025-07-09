@@ -9,7 +9,7 @@ import { useAuth } from "@/stores/hooks/useAuth"
 import LoginPage from "@/app/login/page"
 
 // Lazy load BackgroundGlow for better performance
-const BackgroundGlow = lazy(() => import('./BackgroundGlow'))
+const BackgroundGlow = lazy(() => import('@/components/BackgroundGlow'))
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */

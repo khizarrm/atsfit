@@ -191,6 +191,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearAuthCache()
     })
 
+    console.log("Got the session")
+
     // Listen for auth changes
     const {
       data: { subscription },

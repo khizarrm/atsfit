@@ -3,7 +3,7 @@
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, lazy} from "react"
 import { ArrowLeft, Save, Eye, EyeOff, User, FileText, CheckCircle, AlertCircle, Download, Copy } from "lucide-react"
 import { Resume } from "@/lib/database/resume-operations"
 import { useAuth } from "@/stores/hooks/useAuth"
@@ -20,21 +20,9 @@ interface User {
   name: string
 }
 
-function BackgroundGlow() {
-  return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none">
-      {/* Static central radial glow */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,255,170,0.12)_0%,rgba(0,255,170,0.06)_25%,rgba(0,255,170,0.02)_50%,transparent_70%)]" />
-      
-      {/* Single subtle animated glow */}
-      <motion.div
-        className="absolute inset-0 bg-[radial-gradient(ellipse_600px_300px_at_50%_50%, rgba(0,255,170,0.05), transparent)]"
-        animate={{ opacity: [0.3, 0.5, 0.3] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-      />
-    </div>
-  )
-}
+// everywhere
+const BackgroundGlow = lazy(() => import('@/components/BackgroundGlow'))
+
 
 export default function ProfilePage() {
   const { user, loading, resumeMd, updateResumeCache } = useAuth()

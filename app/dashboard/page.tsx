@@ -7,7 +7,7 @@ import { DashboardView } from "@/components/dashboard-view"
 import { motion } from "framer-motion"
 
 // Lazy load BackgroundGlow for better performance
-const BackgroundGlow = lazy(() => import('../BackgroundGlow'))
+const BackgroundGlow = lazy(() => import('@/components/BackgroundGlow'))
 
 /**
  * Simple fallback background while BackgroundGlow loads
