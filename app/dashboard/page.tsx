@@ -569,246 +569,303 @@ export default function DashboardPage() {
 
         {/* Main Content */}
         <div className="flex-1 flex items-center justify-center p-8">
-          {progress.visible ? (
-            <LoadingProgress
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.1 }}
+          className="w-full max-w-4xl"
+        >
+          {/* Always Visible Header */}
+          <div className="text-center mb-8">
+            <h2 className="text-4xl font-bold text-white mb-4">Optimize your resume</h2>
+            <p className="text-gray-300 text-xl mb-2">
+              Get your resume optimized for ATS systems and significantly improve your match score.
+            </p>
+            
+            {/* Additional Info Section */}
+            <Collapsible open={isHowToOpen} onOpenChange={setIsHowToOpen}>
+              <CollapsibleTrigger className="inline-flex items-center space-x-2 text-[#00FFAA] hover:text-[#00DD99] transition-colors duration-200 mt-4 mb-2">
+                <span className="text-sm font-medium">Additional Info</span>
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isHowToOpen ? 'rotate-180' : ''}`} />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-4">
+                <div className="max-w-4xl mx-auto">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+                      <span className="text-[#00FFAA] mb-2 block">Insert your job description</span>
+                      <p className="text-gray-300">For best use and performance, add just the important stuff, not branding fluff. Focus on role requirements, skills, and qualifications. Use this only for specific jobs. If you're applying for a broad job, modify the keywords and provide instructions in the notes as necessary. You'll get faster responses with shorter, focused job descriptions.</p>
+                    </div>
+                    
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+                      <span className="text-[#00FFAA] mb-2 block">Proofread keywords</span>
+                      <p className="text-gray-300">Review the extracted keywords carefully. Click to remove irrelevant ones or hold to edit them. These keywords directly impact your ATS score.</p>
+                    </div>
+                    
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+                      <span className="text-[#00FFAA] mb-2 block">Additional notes (optional)</span>
+                      <p className="text-gray-300">Feel free to add anything useful. Cases can be removing a certain project, adding another one, specifying a certain aspect to focus on, or refining a certain section. When adding projects, be as specific as possible. The AI will be able to add its own points related to the job description if you aren't super specific, but better to be more accurate.</p>
+                    </div>
+                    
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+                      <span className="text-[#00FFAA] mb-2 block">Limitations</span>
+                      <p className="text-gray-300">The optimization will only work according to the info provided. If your resume only has React and you give a description with C++, you won't get a 100% resume score. To optimize for this, try adding a C++ project in the description.</p>
+                    </div>
+                    
+                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
+                      <span className="text-[#00FFAA] mb-2 block">If you need to modify your resume</span>
+                      <p className="text-gray-300">Please go to <span className="text-[#00FFAA]">Profile → Manage My Resume</span>.</p>
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+
+
+          {/* Conditional Rendering: Form or Loading Progress */}
+          {isSubmitting ? (
+            <LoadingProgress 
               progress={progress.value}
               currentStep={currentStep}
               onCancel={handleCancel}
+              optimizationComplete={optimizationComplete}
+              resultsData={resultsData ?? undefined}
+              error={preValidationError}
+              atsLoading={atsLoading}
+              annotationLoading={annotationLoading}
             />
           ) : (
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="w-full max-w-4xl"
-            >
-              {/* Header */}
-              <div className="text-center mb-8">
-                <motion.div
-                  initial={{ y: -20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.3 }}
-                >
-                  <div className="flex items-center justify-center mb-4">
-                    <Sparkles className="w-8 h-8 text-[#00FFAA] mr-3" />
-                    <h2 className="text-4xl font-bold text-white">AI Resume Optimization</h2>
-                  </div>
-                  <p className="text-gray-300 text-xl mb-2">
-                    Paste a job description below to optimize your resume with AI precision
-                  </p>
-                  <p className="text-gray-400">Get ATS-compatible formatting and keyword optimization in seconds</p>
-                </motion.div>
-              </div>
+            <div className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-3xl p-8 shadow-2xl space-y-6">
+            {/* Error Display handled by toasts */}
 
-              {/* Upload Card */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.4 }}
-                className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-3xl p-8 shadow-2xl space-y-6"
-              >
-                {/* Error Display */}
-                {preValidationError && (
-                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3">
-                    <p className="text-red-400 text-sm">{preValidationError}</p>
+
+
+            {/* Job Description Textarea */}
+            <div className="space-y-3">
+              <label className="text-white font-medium flex items-center space-x-2">
+                <Info className="w-4 h-4 text-[#00FFAA]" />
+                <span>Job Description</span>
+              </label>
+              <div className="relative">
+                <Textarea
+                  value={jobDescription}
+                  onChange={(e) => setJobDescription(e.target.value)}
+                  placeholder="Paste the full job description here...
+
+Include:
+• Job title and responsibilities
+• Required skills and qualifications
+• Experience requirements
+• Company information"
+                  className="min-h-[300px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 text-lg leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-2xl"
+                />
+
+                <motion.div
+                  className="absolute inset-0 rounded-2xl pointer-events-none"
+                  animate={{
+                    boxShadow:
+                      jobDescription.length > 0
+                        ? "0 0 0 1px rgba(0,255,170,0.3), 0 0 20px rgba(0,255,170,0.1)"
+                        : "0 0 0 1px transparent",
+                  }}
+                  transition={{ duration: 0.3 }}
+                />
+              </div>
+            </div>
+
+            {/* Keywords & ATS Score Section */}
+            {(jobDescription.trim() || keywordsLoading || keywords.length > 0 || keywordsError) && (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <label className="text-white font-medium flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4 text-[#00FFAA]" />
+                    <span>Analysis Results</span>
+                  </label>
+                  <p className="text-gray-400 text-sm">
+                    These keywords aren't always accurate. Click to remove or hold to edit a keyword.
+                  </p>
+                </div>
+                
+                {keywordsLoading && (
+                  <div className="bg-white/5 border border-white/20 rounded-xl p-4">
+                    <div className="flex items-center space-x-2">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                        className="w-4 h-4 border-2 border-[#00FFAA] border-t-transparent rounded-full"
+                      />
+                      <span className="text-gray-300 text-sm">Extracting keywords and calculating ATS score...</span>
+                    </div>
                   </div>
                 )}
 
-                {/* How to Use Collapsible */}
-                <Collapsible open={isHowToOpen} onOpenChange={setIsHowToOpen}>
-                  <CollapsibleTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="w-full justify-between p-4 text-left hover:bg-white/5 border border-white/10 rounded-xl"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Info className="w-5 h-5 text-[#00FFAA]" />
-                        <span className="text-white font-medium">How to use this tool</span>
-                      </div>
-                      <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${
-                        isHowToOpen ? 'rotate-180' : ''
-                      }`} />
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="mt-4">
-                    <div className="p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
-                      <div className="space-y-3 text-sm text-gray-300">
-                        <div className="flex items-start space-x-3">
-                          <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <span className="text-blue-400 text-xs font-bold">1</span>
-                          </div>
-                          <p><strong>Paste the job description</strong> you want to apply for in the text area below</p>
-                        </div>
-                        <div className="flex items-start space-x-3">
-                          <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <span className="text-blue-400 text-xs font-bold">2</span>
-                          </div>
-                          <p><strong>Add any specific notes</strong> about skills you want to highlight or requirements to focus on</p>
-                        </div>
-                        <div className="flex items-start space-x-3">
-                          <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <span className="text-blue-400 text-xs font-bold">3</span>
-                          </div>
-                          <p><strong>Click "Start AI Optimization"</strong> and wait for the AI to analyze and optimize your resume</p>
-                        </div>
-                        <div className="flex items-start space-x-3">
-                          <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                            <span className="text-blue-400 text-xs font-bold">4</span>
-                          </div>
-                          <p><strong>Review the optimized version</strong> and download your ATS-compatible resume</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                {/* Job Description Area */}
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                  className="space-y-4"
-                >
-                  <div className="space-y-3">
-                    <label className="text-white font-medium flex items-center space-x-2">
-                      <Send className="w-4 h-4 text-[#00FFAA]" />
-                      <span>Job Description</span>
-                    </label>
-                    <Textarea
-                      value={jobDescription}
-                      onChange={(e) => setJobDescription(e.target.value)}
-                      placeholder="Paste the job description here..."
-                      className="min-h-[200px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 text-sm leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-2xl"
-                    />
+                {keywordsError && (
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4">
+                    <p className="text-red-400 text-sm">{keywordsError}</p>
                   </div>
+                )}
 
-                  {/* Keywords Section */}
-                  {(keywords.length > 0 || keywordsLoading) && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="space-y-3"
-                    >
-                      <label className="text-white font-medium flex items-center space-x-2">
-                        <Sparkles className="w-4 h-4 text-[#00FFAA]" />
-                        <span>Extracted Keywords</span>
-                        {keywordsLoading && (
-                          <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-                            className="w-4 h-4 border-2 border-[#00FFAA] border-t-transparent rounded-full"
-                          />
-                        )}
-                      </label>
-                      
-                      {keywordsError ? (
-                        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3">
-                          <p className="text-red-400 text-sm">{keywordsError}</p>
-                        </div>
-                      ) : (
+                {!keywordsLoading && !keywordsError && keywords.length > 0 && (
+                  <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                    {/* Keywords Card (3/4 width) */}
+                    <div className="lg:col-span-3">
+                      <div className="bg-white/5 border border-white/20 rounded-xl p-4 h-full">
+                        <h4 className="text-white font-medium text-sm mb-3">Extracted Keywords</h4>
                         <div className="flex flex-wrap gap-2">
                           {keywords.map((keyword, index) => (
                             <motion.div
                               key={index}
+                              layout
                               initial={{ opacity: 0, scale: 0.8 }}
                               animate={{ opacity: 1, scale: 1 }}
-                              transition={{ delay: index * 0.05 }}
-                              className="bg-[#00FFAA]/10 border border-[#00FFAA]/30 rounded-full px-3 py-1 text-sm text-[#00FFAA] flex items-center space-x-2 group"
+                              exit={{ opacity: 0, scale: 0.8 }}
+                              className="relative"
                             >
                               {editingKeywordIndex === index ? (
-                                <div className="flex items-center space-x-1">
+                                // Edit mode
+                                <div className="flex items-center gap-1">
                                   <input
                                     type="text"
                                     value={editingKeywordValue}
                                     onChange={(e) => setEditingKeywordValue(e.target.value)}
-                                    className="bg-transparent border-none outline-none text-[#00FFAA] w-20"
-                                    onKeyDown={(e) => e.key === 'Enter' && handleSaveKeyword()}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') handleSaveKeyword()
+                                      if (e.key === 'Escape') handleCancelEdit()
+                                    }}
                                     onBlur={handleSaveKeyword}
                                     autoFocus
+                                    className="px-2 py-1 bg-white/10 border border-[#00FFAA]/50 rounded-full text-white text-sm font-medium outline-none focus:border-[#00FFAA] min-w-[60px] max-w-[120px]"
                                   />
                                 </div>
                               ) : (
-                                <>
-                                  <span
-                                    className="cursor-pointer"
-                                    onClick={() => handleStartEditKeyword(index)}
-                                  >
-                                    {keyword}
-                                  </span>
-                                  <button
-                                    onClick={() => handleRemoveKeyword(index)}
-                                    className="text-[#00FFAA]/60 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-                                  >
-                                    ×
-                                  </button>
-                                </>
+                                // Display mode
+                                <motion.span
+                                  whileHover={{ scale: 1.05 }}
+                                  onMouseDown={() => {
+                                    const timeoutId = setTimeout(() => {
+                                      handleStartEditKeyword(index)
+                                    }, 500) // 500ms hold
+                                    
+                                    const handleMouseUp = () => {
+                                      clearTimeout(timeoutId)
+                                      document.removeEventListener('mouseup', handleMouseUp)
+                                    }
+                                    
+                                    document.addEventListener('mouseup', handleMouseUp)
+                                  }}
+                                  onClick={() => handleRemoveKeyword(index)}
+                                  className="px-3 py-1 bg-gradient-to-r from-[#00FFAA]/20 to-[#00DD99]/20 border border-[#00FFAA]/30 rounded-full text-white text-sm font-medium cursor-pointer transition-all duration-200 hover:from-red-500/30 hover:to-red-400/30 hover:border-red-400/50 hover:text-red-100 select-none inline-block"
+                                >
+                                  {keyword}
+                                </motion.span>
                               )}
                             </motion.div>
                           ))}
                         </div>
-                      )}
-                    </motion.div>
-                  )}
-
-                  {/* ATS Score Display */}
-                  {currentAtsResult && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-white/5 border border-white/10 rounded-xl p-4"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-white font-medium mb-1">Current ATS Score</h3>
-                          <p className="text-gray-400 text-sm">
-                            Your resume matches {currentAtsResult.score}% of the job requirements
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          {atsLoading ? (
-                            <motion.div
-                              animate={{ rotate: 360 }}
-                              transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-                              className="w-6 h-6 border-2 border-[#00FFAA] border-t-transparent rounded-full"
-                            />
-                          ) : (
-                            <AtsScoreCircle score={currentAtsResult.score} />
-                          )}
-                        </div>
+                        <p className="text-gray-400 text-xs mt-3">
+                          {keywords.length} keywords extracted • These will be used to optimize your resume
+                        </p>
                       </div>
-                    </motion.div>
-                  )}
+                    </div>
 
-                  {/* Additional Notes */}
-                  <div className="space-y-3">
-                    <label className="text-white font-medium flex items-center space-x-2">
-                      <Info className="w-4 h-4 text-[#00FFAA]" />
-                      <span>Additional Notes (Optional)</span>
-                    </label>
-                    <Textarea
-                      value={userNotes}
-                      onChange={(e) => setUserNotes(e.target.value)}
-                      placeholder="Any specific skills, experiences, or requirements you want to highlight..."
-                      className="min-h-[100px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 text-sm leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-2xl"
-                    />
+                    {/* ATS Score Card (1/4 width - Square) */}
+                    <div className="lg:col-span-1">
+                      <div className="bg-white/5 border border-white/20 rounded-xl p-4 h-full flex flex-col items-center justify-center text-center min-h-[140px]">
+                        <h4 className="text-white font-medium text-sm mb-3">ATS Score</h4>
+                        {currentAtsResult !== null ? (
+                          <>
+                            <AtsScoreCircle score={currentAtsResult.score} />
+                            <p className="text-gray-400 text-xs mt-2">
+                              {currentAtsResult.score >= 80 
+                                ? "Excellent!" 
+                                : currentAtsResult.score >= 60 
+                                  ? "Good" 
+                                  : currentAtsResult.score >= 40 
+                                    ? "Needs work" 
+                                    : "Poor match"
+                              }
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-16 h-16 flex items-center justify-center bg-white/5 rounded-full border border-white/10 mb-2">
+                              <span className="text-gray-400 text-xs">No Score</span>
+                            </div>
+                            <p className="text-gray-400 text-xs">Upload resume</p>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   </div>
+                )}
 
-                  {/* Action Button */}
-                  <div className="flex justify-center pt-4">
-                    <Button
-                      onClick={handleSubmit}
-                      disabled={!jobDescription.trim() || isSubmitting}
-                      className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-bold px-8 py-4 text-lg rounded-2xl hover:scale-105 transition-all duration-300 hover:shadow-[0_0_40px_rgba(0,255,170,0.4)] shadow-[0_0_20px_rgba(0,255,170,0.2)] disabled:opacity-50 disabled:hover:scale-100"
-                    >
-                      <Sparkles className="mr-3 h-5 w-5" />
-                      {buttonText}
-                    </Button>
+                {!keywordsLoading && !keywordsError && keywords.length === 0 && jobDescription.trim() && (
+                  <div className="bg-white/5 border border-white/20 rounded-xl p-4">
+                    <p className="text-gray-400 text-sm">No keywords extracted. Try adding more technical details to the job description.</p>
                   </div>
-                </motion.div>
-              </motion.div>
-            </motion.div>
+                )}
+              </div>
+            )}
+
+            {/* Notes Section */}
+            {keywords.length > 0 && !keywordsLoading && (
+              <div className="space-y-3">
+                <label className="text-white font-medium flex items-center space-x-2">
+                  <Info className="w-4 h-4 text-[#00FFAA]" />
+                  <span>Additional Notes (Optional)</span>
+                </label>
+                <div className="relative">
+                  <Textarea
+                    value={userNotes}
+                    onChange={(e) => setUserNotes(e.target.value)}
+                    placeholder="Let the AI know anything important before optimizing...
+
+Examples:
+• Focus on leadership experience
+• Emphasize remote work skills
+• Highlight specific certifications
+• Mention career transition context"
+                    className="min-h-[120px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 text-sm leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-xl"
+                  />
+                  <motion.div
+                    className="absolute inset-0 rounded-xl pointer-events-none"
+                    animate={{
+                      boxShadow:
+                        userNotes.length > 0
+                          ? "0 0 0 1px rgba(0,255,170,0.3), 0 0 20px rgba(0,255,170,0.1)"
+                          : "0 0 0 1px transparent",
+                    }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </div>
+                <p className="text-gray-400 text-xs">
+                  This helps the AI understand your priorities and context for better optimization.
+                </p>
+              </div>
+            )}
+
+            <div className="flex justify-center mt-8">
+              <Button
+                onClick={handleSubmit}
+                disabled={!jobDescription.trim() || isSubmitting || keywordsLoading || keywords.length === 0}
+                className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-bold px-8 py-4 text-lg rounded-xl hover:scale-105 transition-all duration-300 hover:shadow-[0_0_40px_rgba(0,255,170,0.4)] shadow-[0_0_20px_rgba(0,255,170,0.2)] disabled:opacity-50 disabled:hover:scale-100"
+              >
+                {isSubmitting ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                    className="w-5 h-5 border-2 border-black border-t-transparent rounded-full mr-2"
+                  />
+                ) : (
+                  <Sparkles className="mr-2 h-5 w-5" />
+                )}
+                {isSubmitting ? buttonText : "Start Optimization"}
+              </Button>
+            </div>
+          </div>
           )}
-        </div>
+        </motion.div>
+      </div>
 
         {/* Footer */}
         <motion.footer
