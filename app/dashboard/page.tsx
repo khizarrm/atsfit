@@ -524,6 +524,7 @@ export default function DashboardPage() {
     name: currentUser.user_metadata?.full_name || currentUser.email!,
   }
 
+  
   console.log("Our user: ", mappedUser)
 
   // Show results view if optimization is complete
@@ -812,19 +813,17 @@ Include:
               <div className="space-y-3">
                 <label className="text-white font-medium flex items-center space-x-2">
                   <Info className="w-4 h-4 text-[#00FFAA]" />
-                  <span>Additional Notes (Optional)</span>
+                  <span>Additional Instructions (Optional)</span>
                 </label>
                 <div className="relative">
                   <Textarea
                     value={userNotes}
                     onChange={(e) => setUserNotes(e.target.value)}
-                    placeholder="Let the AI know anything important before optimizing...
-
-Examples:
-• Focus on leadership experience
-• Emphasize remote work skills
-• Highlight specific certifications
-• Mention career transition context"
+                    placeholder="Some examples: 
+                    - 'I once worked at X for Y months. We did a bunch of Z there, could you please add that in the experience section?
+                    - 'I made X project, here's the link: [link]. Add it to the projects section. I used React, ShadCn, and Supabase for backend.'
+                    - 'Change the name of my Project X to Project Y, and add a point about how I used railway for the backend'
+                    If you leave this blank, the AI will just optimize your resume based on the description."
                     className="min-h-[120px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 text-sm leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-xl"
                   />
                   <motion.div
