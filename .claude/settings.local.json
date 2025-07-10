@@ -9,7 +9,8 @@
       "Bash(npm run:*)",
       "mcp__ide__getDiagnostics",
       "Bash(npx tsc:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(curl:*)"
     ],
     "deny": []
   }

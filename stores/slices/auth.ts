@@ -15,7 +15,7 @@ const initialState: AuthState = {
   hasResume: false,
 }
 
-export const createAuthSlice = (set: any, get: any) => ({
+export const createAuthSlice: StateCreator<AuthSlice, [["zustand/immer", never]], [], AuthSlice> = (set, get) => ({
   ...initialState,
   
   actions: {

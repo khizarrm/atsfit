@@ -23,7 +23,7 @@ const initialState: UIState = {
   },
 }
 
-export const createUISlice = (set: any, get: any) => ({
+export const createUISlice: StateCreator<UISlice, [["zustand/immer", never]], [], UISlice> = (set, get) => ({
   ...initialState,
   
   actions: {

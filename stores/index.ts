@@ -11,6 +11,36 @@ export interface RootStore {
   ui: UISlice
 }
 
+// Create a shared storage utility
+const createStorage = () => ({
+  getItem: (name: string) => {
+    try {
+      if (typeof window === 'undefined') return null
+      const item = localStorage.getItem(name)
+      return item ? JSON.parse(item) : null
+    } catch (error) {
+      console.error('Error reading from localStorage:', error)
+      return null
+    }
+  },
+  setItem: (name: string, value: any) => {
+    try {
+      if (typeof window === 'undefined') return
+      localStorage.setItem(name, JSON.stringify(value))
+    } catch (error) {
+      console.error('Error writing to localStorage:', error)
+    }
+  },
+  removeItem: (name: string) => {
+    try {
+      if (typeof window === 'undefined') return
+      localStorage.removeItem(name)
+    } catch (error) {
+      console.error('Error removing from localStorage:', error)
+    }
+  },
+})
+
 // Individual store hooks for better performance
 export const useAuthStore = create<AuthSlice>()(
   persist(
@@ -22,40 +52,7 @@ export const useAuthStore = create<AuthSlice>()(
     ),
     {
       name: 'atsfit-auth',
-      storage: {
-        getItem: (name) => {
-          try {
-            if (typeof window === 'undefined') return null
-            const item = sessionStorage.getItem(name)
-            return item ? JSON.parse(item) : null
-          } catch (error) {
-            console.error('Error reading from sessionStorage:', error)
-            return null
-          }
-        },
-        setItem: (name, value) => {
-          try {
-            if (typeof window === 'undefined') return
-            sessionStorage.setItem(name, JSON.stringify(value))
-          } catch (error) {
-            console.error('Error writing to sessionStorage:', error)
-          }
-        },
-        removeItem: (name) => {
-          try {
-            if (typeof window === 'undefined') return
-            sessionStorage.removeItem(name)
-          } catch (error) {
-            console.error('Error removing from sessionStorage:', error)
-          }
-        },
-      },
-      partialize: (state) => ({
-        user: state.user,
-        session: state.session,
-        resumeMd: state.resumeMd,
-        hasResume: state.hasResume,
-      }),
+      storage: createStorage(),
     }
   )
 )
@@ -70,40 +67,7 @@ export const useResumeStore = create<ResumeSlice>()(
     ),
     {
       name: 'atsfit-resume',
-      storage: {
-        getItem: (name) => {
-          try {
-            if (typeof window === 'undefined') return null
-            const item = localStorage.getItem(name)
-            return item ? JSON.parse(item) : null
-          } catch (error) {
-            console.error('Error reading from localStorage:', error)
-            return null
-          }
-        },
-        setItem: (name, value) => {
-          try {
-            if (typeof window === 'undefined') return
-            localStorage.setItem(name, JSON.stringify(value))
-          } catch (error) {
-            console.error('Error writing to localStorage:', error)
-          }
-        },
-        removeItem: (name) => {
-          try {
-            if (typeof window === 'undefined') return
-            localStorage.removeItem(name)
-          } catch (error) {
-            console.error('Error removing from localStorage:', error)
-          }
-        },
-      },
-      partialize: (state) => ({
-        content: state.content,
-        originalContent: state.originalContent,
-        versions: state.versions,
-        lastSaved: state.lastSaved,
-      }),
+      storage: createStorage(),
     }
   )
 )
@@ -118,37 +82,7 @@ export const useUIStore = create<UISlice>()(
     ),
     {
       name: 'atsfit-ui',
-      storage: {
-        getItem: (name) => {
-          try {
-            if (typeof window === 'undefined') return null
-            const item = localStorage.getItem(name)
-            return item ? JSON.parse(item) : null
-          } catch (error) {
-            console.error('Error reading from localStorage:', error)
-            return null
-          }
-        },
-        setItem: (name, value) => {
-          try {
-            if (typeof window === 'undefined') return
-            localStorage.setItem(name, JSON.stringify(value))
-          } catch (error) {
-            console.error('Error writing to localStorage:', error)
-          }
-        },
-        removeItem: (name) => {
-          try {
-            if (typeof window === 'undefined') return
-            localStorage.removeItem(name)
-          } catch (error) {
-            console.error('Error removing from localStorage:', error)
-          }
-        },
-      },
-      partialize: (state) => ({
-        theme: state.theme,
-      }),
+      storage: createStorage(),
     }
   )
 )
@@ -158,6 +92,15 @@ export const initializeStore = async () => {
   const authStore = useAuthStore.getState()
   const resumeStore = useResumeStore.getState()
   
+  console.log('Store debug:', {
+    authStore: !!authStore,
+    authActions: !!authStore?.actions,
+    resumeStore: !!resumeStore,
+    resumeActions: !!resumeStore?.actions,
+    initializeResumeExists: !!resumeStore?.actions?.initializeResume,
+    updateKeywordsExists: !!resumeStore?.actions?.updateKeywords
+  })
+  
   // Initialize auth
   await authStore.actions.initializeAuth()
   
@@ -166,7 +109,7 @@ export const initializeStore = async () => {
   
   // Initialize resume if user is authenticated
   const user = authStore.user
-  if (user) {
+  if (user && resumeStore?.actions?.initializeResume) {
     await resumeStore.actions.initializeResume(user.id)
   }
   

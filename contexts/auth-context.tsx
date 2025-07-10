@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
-import { getUserProfile } from '@/lib/database/resume-operations'
 
 interface AuthContextType {
   user: User | null
@@ -13,10 +12,7 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<{ data: any; error: any }>
   signIn: (email: string, password: string) => Promise<{ data: any; error: any }>
   signOut: () => Promise<{ error: any }>
-  refreshResume: () => Promise<void>
   hasResume: boolean
-  refreshUserProfile: () => Promise<void>
-  updateResumeCache: (newResumeContent: string) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -28,14 +24,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [resumeMd, setResumeMd] = useState<string | null>(null)
   const [hasResume, setHasResume] = useState(false)
 
-  // Cache keys for sessionStorage
   const CACHE_KEYS = {
     AUTH_STATE: 'atsfit_auth_state',
     USER_PROFILE: 'atsfit_user_profile',
     RESUME_MD: 'atsfit_resume_md'
   }
 
-  // Helper functions for caching
   const cacheUserData = (user: User | null, resumeMd: string | null) => {
     try {
       const cacheData = {
@@ -43,90 +37,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         resumeMd,
         timestamp: Date.now()
       }
-      sessionStorage.setItem(CACHE_KEYS.AUTH_STATE, JSON.stringify(cacheData))
+      console.log("CACHE DATA BEING STORED:", { userEmail: user?.email, resumeLength: resumeMd?.length })
+      localStorage.setItem(CACHE_KEYS.AUTH_STATE, JSON.stringify(cacheData))
     } catch (error) {
       console.error('Error caching user data:', error)
     }
   }
-
+  
   const getCachedUserData = () => {
     try {
-      const cached = sessionStorage.getItem(CACHE_KEYS.AUTH_STATE)
-      if (cached) {
-        const data = JSON.parse(cached)
-        // Cache expires after 30 minutes for better UX
-        if (Date.now() - data.timestamp < 30 * 60 * 1000) {
-          return data
-        }
+      const cached = localStorage.getItem(CACHE_KEYS.AUTH_STATE)
+      if (!cached) return null
+      
+      const data = JSON.parse(cached)
+      const isExpired = Date.now() - data.timestamp > 24 * 60 * 60 * 1000 // 24 hours
+      
+      if (isExpired) {
+        localStorage.removeItem(CACHE_KEYS.AUTH_STATE)
+        return null
       }
+      
+      return data
     } catch (error) {
       console.error('Error reading cached user data:', error)
+      return null
     }
-    return null
   }
 
   const clearAuthCache = () => {
     try {
-      sessionStorage.removeItem(CACHE_KEYS.AUTH_STATE)
-      sessionStorage.removeItem(CACHE_KEYS.USER_PROFILE)
-      sessionStorage.removeItem(CACHE_KEYS.RESUME_MD)
+      localStorage.removeItem(CACHE_KEYS.AUTH_STATE)
+      localStorage.removeItem(CACHE_KEYS.USER_PROFILE)
+      localStorage.removeItem(CACHE_KEYS.RESUME_MD)
     } catch (error) {
       console.error('Error clearing auth cache:', error)
     }
   }
 
-  const fetchUserProfile = async () => {
+
+  const getUserResume = async (userId: string, forceRefresh = false, userToCache?: User) => {
     try {
-      const { has_resume, error } = await getUserProfile()
-      
-      if (error) {
-        console.error('Error fetching user profile:', error)
-        setHasResume(false)
-        return
-      }
-      
-      setHasResume(has_resume)
-    } catch (error) {
-      console.error('Error fetching user profile:', error)
-      setHasResume(false)
-    }
-  }
-
-  const fetchUserResume = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('resumes')
-        .select('resume_md')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-
-      if (error) {
-        console.error('Error fetching resume:', error)
-        setResumeMd(null)
-        return
-      }
-
-      setResumeMd(data?.resume_md || null)
-    } catch (error) {
-      console.error('Error fetching resume:', error)
-      setResumeMd(null)
-    }
-  }
-
-  const fetchUserDataOnAuth = async (userId: string, forceRefresh = false) => {
-    try {
-      // Check if we have fresh cached data and don't need to hit the database
       const cachedData = getCachedUserData()
       if (!forceRefresh && cachedData && cachedData.user?.id === userId) {
-        // Use cached data immediately - no database calls needed!
         setResumeMd(cachedData.resumeMd)
         setHasResume(!!cachedData.resumeMd?.trim())
         return
       }
-
-      // Only fetch from database if cache is stale or missing
       const { data, error } = await supabase
         .from('resumes')
         .select('resume_md')
@@ -139,13 +95,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.error('Error fetching resume:', error)
         setResumeMd(null)
         setHasResume(false)
+        // Still cache user even if resume fetch fails
+        const userToUse = userToCache || user
+        cacheUserData(userToUse, null)
       } else {
         const resumeContent = data?.resume_md || null
         setResumeMd(resumeContent)
         setHasResume(!!resumeContent?.trim())
         
-        // Cache the fresh data
-        cacheUserData(user, resumeContent)
+        // Cache user with resume content  
+        const userToUse = userToCache || user
+        console.log("CACHING USER WITH RESUME:", userToUse?.email, "resume length:", resumeContent?.length)
+        cacheUserData(userToUse, resumeContent)
       }
     } catch (error) {
       console.error('Error fetching user data:', error)
@@ -155,28 +116,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    // Try to load cached data first for immediate response
+    // Check for cached user data first for instant loading
     const cachedData = getCachedUserData()
     if (cachedData) {
       setUser(cachedData.user)
       setResumeMd(cachedData.resumeMd)
       setHasResume(!!cachedData.resumeMd?.trim())
-      // User sees immediate response with cached data
+      setLoading(false)
+      return
     }
 
-    console.log("Getting initial session...")
-    // Get initial session
+    // Get current session if no cache
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       setUser(session?.user ?? null)
       
       if (session?.user) {
-        // Use cached data if available, only fetch from DB if needed
-        fetchUserDataOnAuth(session.user.id).finally(() => {
+        getUserResume(session.user.id).finally(() => {
           setLoading(false)
         })
       } else {
-        // For anonymous users, immediately clear state and stop loading
         setHasResume(false)
         setResumeMd(null)
         setLoading(false)
@@ -184,37 +143,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }).catch((error) => {
       console.error('Auth session error:', error)
-      // Set loading to false even on error to prevent infinite loading
       setHasResume(false)
       setResumeMd(null)
       setLoading(false)
       clearAuthCache()
     })
 
-    console.log("Got the session")
-
-    // Listen for auth changes
+    // Listen for auth state changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_, session) => {
       setSession(session)
       setUser(session?.user ?? null)
       
       if (session?.user) {
-        // On sign in, use cached data immediately if available
         const cachedData = getCachedUserData()
         if (cachedData && cachedData.user?.id === session.user.id) {
-          // Instant load with cached data
           setResumeMd(cachedData.resumeMd)
           setHasResume(!!cachedData.resumeMd?.trim())
           setLoading(false)
         } else {
-          fetchUserDataOnAuth(session.user.id).finally(() => {
+          getUserResume(session.user.id).finally(() => {
             setLoading(false)
           })
         }
       } else {
-        // On sign out, clear all cached data immediately
         setHasResume(false)
         setResumeMd(null)
         setLoading(false)
@@ -226,44 +179,61 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signUp = async (email: string, password: string) => {
-    return await supabase.auth.signUp({
+    const result = await supabase.auth.signUp({
       email,
       password,
     })
+    
+    if (result.data.session && result.data.user) {
+      setSession(result.data.session)
+      setUser(result.data.user)
+      setHasResume(false)
+      setResumeMd(null)
+      setLoading(false)
+      cacheUserData(result.data.user, null)
+    }
+    
+    return result
   }
 
   const signIn = async (email: string, password: string) => {
-    return await supabase.auth.signInWithPassword({
+    const result = await supabase.auth.signInWithPassword({
       email,
       password,
     })
+    
+    // Manually update auth context state on successful login
+    if (result.data.session && result.data.user) {
+      setSession(result.data.session)
+      setUser(result.data.user)
+      
+      // Get resume data for this user
+      const hasResumeFromMetadata = result.data.user.user_metadata?.has_resume || false
+      setHasResume(hasResumeFromMetadata)
+
+      // First get the resume content (getUserResume handles caching internally)
+      await getUserResume(result.data.user.id, true, result.data.user) // pass the actual user data
+      console.log("USER RESUME FETCHED AND CACHED")
+      setLoading(false)
+    }
+    
+    return result
   }
 
   const signOut = async () => {
-    return await supabase.auth.signOut()
-  }
-
-  const refreshResume = async () => {
-    if (user) {
-      await fetchUserResume(user.id)
-    }
-  }
-
-  const refreshUserProfile = async () => {
-    await fetchUserProfile()
-  }
-
-  const updateResumeCache = (newResumeContent: string) => {
-    // Instantly update the cached resume content for smooth UX
-    setResumeMd(newResumeContent)
-    // Also update hasResume based on content
-    setHasResume(!!newResumeContent.trim())
+    const result = await supabase.auth.signOut()
     
-    // Update the cache with new content
-    if (user) {
-      cacheUserData(user, newResumeContent)
-    }
+    // Manually clear auth context state on signout
+    setSession(null)
+    setUser(null)
+    setHasResume(false)
+    setResumeMd(null)
+    setLoading(false)
+    clearAuthCache()
+    
+    return result
   }
+
 
   const value = {
     user,
@@ -273,10 +243,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signIn,
     signOut,
-    refreshResume,
     hasResume,
-    refreshUserProfile,
-    updateResumeCache,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
@@ -288,4 +255,42 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
+}
+
+export function getCachedUserData() {
+  try {
+    const cached = localStorage.getItem('atsfit_auth_state')
+    if (!cached) return null
+    
+    const data = JSON.parse(cached)
+    const isExpired = Date.now() - data.timestamp > 24 * 60 * 60 * 1000 // 24 hours
+    
+    if (isExpired) {
+      localStorage.removeItem('atsfit_auth_state')
+      return null
+    }
+    
+    console.log("RETRIEVED CACHED DATA:", { userEmail: data.user?.email, resumeLength: data.resumeMd?.length })
+    return data
+  } catch (error) {
+    console.error('Error reading cached user data:', error)
+    return null
+  }
+}
+
+export function updateCachedResume(resumeMd: string) {
+  try {
+    const cached = localStorage.getItem('atsfit_auth_state')
+    if (!cached) return false
+    
+    const data = JSON.parse(cached)
+    data.resumeMd = resumeMd
+    data.timestamp = Date.now()
+    
+    localStorage.setItem('atsfit_auth_state', JSON.stringify(data))
+    return true
+  } catch (error) {
+    console.error('Error updating cached resume:', error)
+    return false
+  }
 }

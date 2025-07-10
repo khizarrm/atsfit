@@ -30,9 +30,18 @@ export function useResumeManager(userId: string | null): [ResumeState, ResumeAct
   const retryCount = useResumeStore(state => state.retryCount)
   
   const updateContent = useResumeStore(state => state.actions.updateContent)
-  const saveResume = useResumeStore(state => state.actions.saveResume)
+  const saveResumeAction = useResumeStore(state => state.actions.saveResume)
   const resetToOriginal = useResumeStore(state => state.actions.resetToOriginal)
-  const retry = useResumeStore(state => state.actions.retry)
+  const retryAction = useResumeStore(state => state.actions.retry)
+  
+  // Wrapper functions to handle userId parameter
+  const saveResume = async () => {
+    return await saveResumeAction(userId || undefined)
+  }
+  
+  const retry = async () => {
+    return await retryAction(userId || undefined)
+  }
 
   // Map loading state to the expected format
   const loadingState: LoadingState = loading === 'loading' ? 'loading' : 

@@ -1,32 +1,66 @@
-# Fix SSR localStorage/sessionStorage Errors
+# Auth Context Redesign Plan
 
-## Problem
-The app is throwing `ReferenceError: sessionStorage is not defined` and `ReferenceError: localStorage is not defined` during server-side rendering (SSR) because these browser APIs are not available on the server.
+## Current Issues
+1. `getUserProfile` function is in resume-operations but it's not a resume operation - it's auth-related
+2. `getCachedUserData` function is incomplete/broken (line 67-68)
+3. Auth logic is mixed with resume logic inappropriately
+4. No proper localStorage persistence for user sessions
 
-## Root Cause
-The Zustand stores in `stores/index.ts` are trying to access `localStorage` and `sessionStorage` during SSR at lines 28, 73, and 118.
+## Proposed Changes
 
-## Solution Approach
-1. **Examine the current store implementation** ✓ - Found 3 stores with custom storage implementations
-2. **Add proper SSR guards** to check if we're in a browser environment before accessing storage APIs
-3. **Implement fallback behavior** for server-side rendering
-4. **Test the fix** to ensure it works correctly
+### 1. Remove getUserProfile dependency
+- Remove import of `getUserProfile` from resume-operations
+- Replace `fetchUserProfile` function with direct Supabase auth user metadata checking
+
+### 2. Fix and improve caching system
+- Replace broken `getCachedUserData` function
+- Implement proper cache key checking (user profile existence check)
+- Add localStorage persistence for user sessions
+- Add cache validation with timestamps
+
+### 3. Simplify auth flow
+- Keep resume fetching in auth context (since it's user-specific auth state)
+- Remove dependency on resume-operations for user profile
+- Clean up the auth state management
+
+### 4. Add missing functions
+- Add `clearAuthCache` function that's referenced but missing
+- Fix the AuthContextType interface
 
 ## Implementation Steps
-1. Read `stores/index.ts` to understand the current storage implementation ✓
-2. Add `typeof window !== 'undefined'` checks before accessing storage APIs
-3. Provide fallback values for SSR (return null or empty state)
-4. Verify the fix resolves the errors
+
+1. **Remove getUserProfile import and related code**
+   - Remove import from resume-operations
+   - Replace `fetchUserProfile` function with direct user metadata checking
+   - Remove `refreshUserProfile` function
+
+2. **Implement proper cache functions**
+   - Create `getCachedUserData` function
+   - Create `clearAuthCache` function
+   - Add cache key existence checking
+   - Add localStorage session persistence
+
+3. **Implement direct user profile checking**
+   - Use `supabase.auth.getUser()` directly for user metadata
+   - Check `has_resume` from user metadata instead of separate function
+
+4. **Clean up and optimize**
+   - Remove redundant code
+   - Improve error handling
+   - Add proper TypeScript types
 
 ## Files to Modify
-- `stores/index.ts` - Add SSR guards for storage access
+- `/contexts/auth-context.tsx` - Main implementation
+- Remove dependency on `/lib/database/resume-operations.ts` for getUserProfile
 
-## Technical Details
-- `useAuthStore` uses `sessionStorage` (lines 28, 37, 44)
-- `useResumeStore` uses `localStorage` (lines 73, 82, 89)
-- `useUIStore` uses `localStorage` (lines 118, 127, 134)
+## Key Decisions
+- Keep resume data fetching in auth context (since it's user-specific auth state)
+- Use localStorage for session persistence
+- Focus on auth-only functionality
+- Rely on Supabase auth user metadata for has_resume status
+- Maintain backward compatibility with existing context consumers
 
-## Expected Outcome
-- No more SSR errors related to localStorage/sessionStorage
-- App continues to work correctly in the browser
-- Proper fallback behavior during SSR
+## Assumptions
+- User metadata includes `has_resume` field
+- localStorage is available in the browser environment
+- Current cache key structure should be maintained

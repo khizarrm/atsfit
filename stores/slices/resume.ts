@@ -21,7 +21,7 @@ const initialState: ResumeState = {
   keywordsError: null,
 }
 
-export const createResumeSlice = (set: any, get: any) => ({
+export const createResumeSlice: StateCreator<ResumeSlice, [["zustand/immer", never]], [], ResumeSlice> = (set, get) => ({
   ...initialState,
   
   actions: {
@@ -36,12 +36,8 @@ export const createResumeSlice = (set: any, get: any) => ({
       })
     },
 
-    saveResume: async () => {
+    saveResume: async (userId?: string) => {
       const { content, retryCount } = get()
-      
-      // Get userId from auth store
-      const authStore = require('../index').useAuthStore
-      const userId = authStore.getState().user?.id
       
       if (!userId) {
         set((state) => {
@@ -61,14 +57,10 @@ export const createResumeSlice = (set: any, get: any) => ({
       })
     },
 
-    retry: async () => {
+    retry: async (userId?: string) => {
       const { loading } = get()
-      if (loading === 'error') {
-        const authStore = require('../index').useAuthStore
-        const userId = authStore.getState().user?.id
-        if (userId) {
-          await get().actions.loadResume(userId, 0) // Reset retry count
-        }
+      if (loading === 'error' && userId) {
+        await get().actions.loadResume(userId, 0) // Reset retry count
       }
     },
 

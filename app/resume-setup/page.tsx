@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useState, useEffect, Suspense, lazy } from "react"
 import { Check, Copy, FileText, User } from "lucide-react"
-import { useAuth } from "@/stores/hooks/useAuth"
+import { useAuth, getCachedUserData } from "@/contexts/auth-context"
 import { saveUserResume, validateResumeContent } from "@/lib/database/resume-operations"
 import { SharedHeader } from "@/components/shared-header"
 import { useRouter } from "next/navigation"
@@ -15,17 +15,30 @@ const BackgroundGlow = lazy(() => import('@/components/BackgroundGlow'))
 
 export default function ResumeSetupPage() {
   const router = useRouter()
-  const { user, updateResumeCache } = useAuth()
+  const { user } = useAuth()
   const [resumeContent, setResumeContent] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState("")
   const [copied, setCopied] = useState(false)
 
-  // Redirect to login if not authenticated
+  // Check authentication with localStorage-first approach
   useEffect(() => {
-    if (!user) {
-      router.push("/login")
+    // First: Check localStorage for instant auth verification
+    const cachedData = getCachedUserData()
+    if (cachedData && cachedData.user) {
+      console.log("📦 Resume setup: Using cached user data")
+      return // User is authenticated via cache
     }
+
+    // Fallback: Use auth context
+    if (user) {
+      console.log("🔄 Resume setup: Using auth context user")
+      return // User is authenticated via auth context
+    }
+
+    // No user found - redirect to login
+    console.log("🚫 Resume setup: No user found, redirecting to login")
+    router.push("/login")
   }, [user, router])
 
   const chatGPTPrompt = 
@@ -102,10 +115,7 @@ ___________________________________________________________`
       const result = await saveUserResume(user.id, resumeContent)
       
       if (result.success) {
-        // Instantly update the cached resume content for smooth UX
-        updateResumeCache(resumeContent)
-        // Navigate to dashboard - updateResumeCache already handles hasResume correctly
-        router.push("/")
+        router.push("/dashboard")
       } else {
         setError(result.error || "Failed to save resume")
       }

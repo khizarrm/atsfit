@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { updateCachedResume } from '@/contexts/auth-context'
 
 export interface Resume {
   id: string
@@ -101,6 +102,9 @@ export async function saveUserResume(userId: string, resumeMd: string): Promise<
       console.error('Failed to update user has_resume field:', userUpdateError)
       // Don't fail the whole operation for this, just log it
     }
+
+    // Update the cache with the new resume content
+    updateCachedResume(resumeMd)
 
     return {
       data: data?.[0] || null,

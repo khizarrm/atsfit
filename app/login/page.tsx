@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { UserPlus, Zap, Target, TrendingUp, CheckCircle, X, Mail, Lock } from "lucide-react"
 import { useState, lazy } from "react"
-import { useAuth } from "@/stores/hooks/useAuth"
+import { useAuth, getCachedUserData } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
 
 const BackgroundGlow = lazy(() => import('@/components/BackgroundGlow'))
@@ -25,7 +25,6 @@ export default function LoginPage() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email || !password) return
-
     setIsLoading(true)
     setError("")
 
@@ -35,13 +34,8 @@ export default function LoginPage() {
       if (error) {
         setError(error.message)
       } else {
-        // Check if email confirmation is required
-        if (data.user && !data.session) {
-          setError("Please check your email to confirm your account")
-        } else {
-          setIsRedirecting(true)
-          router.push("/") // Redirect to main app
-        }
+        setIsRedirecting(true)
+        router.push("/resume-setup")
       }
     } catch (err) {
       setError("An unexpected error occurred")
@@ -51,6 +45,7 @@ export default function LoginPage() {
   }
 
   const handleLogin = async (e: React.FormEvent) => {
+    console.log("handling login")
     e.preventDefault()
     if (!email || !password) return
 
@@ -59,22 +54,36 @@ export default function LoginPage() {
 
     try {
       const { data, error } = await signIn(email, password)
-      
+      console.log("Login response:", data, error)
       if (error) {
         setError(error.message)
       } else {
         setIsRedirecting(true)
-        router.push("/") // Redirect to main app
+        
+        // First check cache for resume data (since signIn updates the cache)
+        const cachedData = getCachedUserData()
+        const userHasResumeInCache = !!cachedData?.resumeMd?.trim()
+        console.log("User has resume in cache:", userHasResumeInCache)
+        
+        // Fallback to metadata if cache doesn't have resume info
+        const userHasResumeFromMetadata = data?.user?.user_metadata?.has_resume || false
+        console.log("User has resume from metadata:", userHasResumeFromMetadata)
+        
+        const userHasResume = userHasResumeInCache || userHasResumeFromMetadata
+
+        if (userHasResume) {
+          console.log("Pushing to dashboard")
+          router.push("/dashboard")
+        } else {
+          console.log("Pushing to resume setup")
+          router.push("/resume-setup")
+        }
       }
     } catch (err) {
       setError("An unexpected error occurred")
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handleTryIt = () => {
-    router.push("/")
   }
 
   return (
@@ -87,7 +96,7 @@ export default function LoginPage() {
         exit={{ opacity: 0 }}
         className="flex flex-col items-center justify-center min-h-screen relative px-8"
       >
-        {/* Top Navigation */}
+
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}

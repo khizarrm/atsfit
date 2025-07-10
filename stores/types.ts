@@ -57,9 +57,9 @@ export interface ResumeState extends BaseState {
 
 export interface ResumeActions {
   updateContent: (content: string) => void
-  saveResume: () => Promise<void>
+  saveResume: (userId?: string) => Promise<void>
   resetToOriginal: () => void
-  retry: () => Promise<void>
+  retry: (userId?: string) => Promise<void>
   addVersion: (content: string, isAutoSave?: boolean) => void
   restoreVersion: (versionId: string) => void
   clearError: () => void
