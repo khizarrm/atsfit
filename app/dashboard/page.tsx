@@ -53,7 +53,6 @@ export default function DashboardPage() {
   
   // API data
   const [annotationData, setAnnotationData] = useState<any>(null)
-  const [atsScoreData, setAtsScoreData] = useState<AtsScoreResponse | null>(null)
   const [currentAtsResult, setCurrentAtsResult] = useState<AtsScoreResult | null>(null)
   
   // Results data

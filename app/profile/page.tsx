@@ -5,9 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useState, useEffect, useMemo, lazy} from "react"
 import { ArrowLeft, Save, Eye, EyeOff, User, FileText, CheckCircle, AlertCircle, Download, Copy } from "lucide-react"
-import { Resume } from "@/lib/database/resume-operations"
-import { useAuth } from "@/stores/hooks/useAuth"
-import { getUserResume, saveUserResume, validateResumeContent } from "@/lib/database/resume-operations"
+import { useAuth, getCachedUserData } from "@/contexts/auth-context"
+import { saveUserResume, validateResumeContent } from "@/lib/database/resume-operations"
 import { SharedHeader } from "@/components/shared-header"
 import { generatePDF } from "@/lib/api"
 import { renderMarkdownPreview } from "@/lib/utils/preview-renderer"
@@ -25,7 +24,7 @@ const BackgroundGlow = lazy(() => import('@/components/BackgroundGlow'))
 
 
 export default function ProfilePage() {
-  const { user, loading, resumeMd, updateResumeCache } = useAuth()
+  const { user, loading, hasResume } = useAuth()
   const router = useRouter()
   const [resumeContent, setResumeContent] = useState("")
   const [hasInitialized, setHasInitialized] = useState(false)
@@ -43,11 +42,12 @@ export default function ProfilePage() {
 
   useEffect(() => {
     // Initialize immediately if we have data, regardless of loading state
-    if (resumeMd && !hasInitialized) {
-      setResumeContent(resumeMd)
-      setOriginalContent(resumeMd)
+    if (hasResume) {
+      const cachedData = getCachedUserData()
+      setResumeContent(cachedData.resumeMd)
+      setOriginalContent(cachedData.resumeMd)
       setHasInitialized(true)
-    } else if (!resumeMd && !loading && !hasInitialized) {
+    } else {
       // Only show template if we're not loading and definitely have no resume
       const template = `# YOUR NAME
 
@@ -83,11 +83,11 @@ phone • email • website • github
       setOriginalContent("")
       setHasInitialized(true)
     }
-  }, [resumeMd, loading, hasInitialized])
+  }, [hasResume, loading, hasInitialized])
 
   
   // Only show loading if we haven't initialized AND we don't have cached data
-  if (loading && !hasInitialized && !resumeMd) {
+  if (loading && !hasInitialized && !hasResume) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
@@ -178,9 +178,6 @@ ___________________________________________________________`
         setOriginalContent(resumeContent)
         setHasChanges(false)
         showMessage('success', 'Resume saved successfully!')
-        
-        // Update the cached resume content in auth context for instant sync across app
-        updateResumeCache(resumeContent)
       } else {
         showMessage('error', result.error || 'Failed to save resume')
       }
