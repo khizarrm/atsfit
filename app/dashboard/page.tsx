@@ -542,7 +542,7 @@ export default function DashboardPage() {
           onBack={handleBackFromResults}
           onSignUp={() => router.push("/")}
           onNextJob={handleNextJob}
-          onGoToProfile={() => router.push("/profile")}
+          onGoToProfile={() => {router.push("/profile")}}
           isTrialMode={false}
           user={mappedUser}
         />
@@ -563,7 +563,7 @@ export default function DashboardPage() {
         className="min-h-screen flex flex-col"
       >
         <SharedHeader
-          onGoToProfile={() => router.push("/profile")}
+          onGoToProfile={() => {console.log("going to profile") , router.push("/profile")}}
           onSignUp={() => router.push("/")}
           user={mappedUser}
         />

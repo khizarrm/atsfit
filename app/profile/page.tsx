@@ -107,11 +107,6 @@ phone • email • website • github
     )
   }
 
-  if (!user) {
-    router.push("/login")
-    return null
-  }
-
   const chatGPTPrompt = `Convert the following resume text exactly as written into Markdown format.
 
 Instructions:

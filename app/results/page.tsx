@@ -197,7 +197,7 @@ function ResultsPageContent() {
     if (jobUrl) {
       sessionStorage.setItem('nextJobUrl', jobUrl)
     }
-    router.push("/")
+    router.push("/dashboard")
   }
 
   // Show loading while auth is checking or params are parsing
