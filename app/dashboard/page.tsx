@@ -191,9 +191,18 @@ export default function DashboardPage() {
     }
   }
 
-  const handleRemoveKeyword = (index: number) => {
-    const newKeywords = keywords.filter((_, i) => i !== index)
-    updateKeywords(newKeywords)
+  const handleRemoveKeyword = (indexToRemove: number) => {
+    const updatedKeywords = keywords.filter((_, index) => index !== indexToRemove)
+    updateKeywords(updatedKeywords)
+    
+    // Recalculate ATS score with updated keywords
+    if (resumeMd && updatedKeywords.length > 0) {
+      const atsResult = calculateAtsScore(resumeMd, updatedKeywords)
+      setCurrentAtsResult(atsResult)
+      console.log("ATS Score recalculated after keyword removal:", atsResult.score)
+    } else {
+      setCurrentAtsResult(null)
+    }
   }
 
   const handleStartEditKeyword = (index: number) => {
@@ -203,9 +212,16 @@ export default function DashboardPage() {
 
   const handleSaveKeyword = () => {
     if (editingKeywordIndex !== null && editingKeywordValue.trim()) {
-      const newKeywords = [...keywords]
-      newKeywords[editingKeywordIndex] = editingKeywordValue.trim()
-      updateKeywords(newKeywords)
+      const updatedKeywords = [...keywords]
+      updatedKeywords[editingKeywordIndex] = editingKeywordValue.trim()
+      updateKeywords(updatedKeywords)
+      
+      // Recalculate ATS score with updated keywords
+      if (resumeMd) {
+        const atsResult = calculateAtsScore(resumeMd, updatedKeywords)
+        setCurrentAtsResult(atsResult)
+        console.log("ATS Score recalculated after keyword edit:", atsResult.score)
+      }
     }
     setEditingKeywordIndex(null)
     setEditingKeywordValue("")
@@ -272,6 +288,11 @@ export default function DashboardPage() {
   const handleSubmit = async () => {
     if (!jobDescription.trim()) return
 
+    if (!resumeMd) {
+      setPreValidationError("Please upload your resume first.")
+      return
+    }
+
     // Set up abort controller
     const controller = new AbortController()
     setAbortController(controller)
@@ -281,69 +302,94 @@ export default function DashboardPage() {
       setOptimizationComplete(false)
       setResultsData(null)
       setPreValidationError(null)
+      setApiCheckpoints({ step1: false, step2: false, step3: false })
       
-      // Step 1: Extract keywords and get initial ATS score
-      setCurrentStep("Extracting keywords from job description...")
+      // Store the initial ATS score for before/after comparison (from currentAtsResult)
+      const initialScore = currentAtsResult?.score || null
+      setStoredInitialAtsScore(initialScore)
+      
+      // Capture missing keywords for annotation (use missing keywords specifically)
+      const missingKeywords = currentAtsResult?.missingKeywords || keywords
+      const missingKeywordsCount = missingKeywords.length
+      
+      console.log("🎯 Starting optimization with:")
+      console.log("Initial ATS Score:", initialScore)
+      console.log("Missing Keywords:", missingKeywords)
+      console.log("Missing Keywords Count:", missingKeywordsCount)
+      
+      // Step 1: Annotate Resume (using missing keywords)
+      setCurrentStep("Analyzing resume and matching keywords...")
       updateProgressSmooth(20)
       
-      const keywordResponse = await extractKeywordsFromJobDescription(jobDescription, controller.signal)
-      updateKeywords(keywordResponse)
-      setApiCheckpoints(prev => ({ ...prev, step1: true }))
-      
-      // Calculate initial ATS score
-      if (resumeMd) {
-        setAtsLoading(true)
-        const initialScore = calculateAtsScore(resumeMd, keywordResponse)
-        setCurrentAtsResult(initialScore)
-        setStoredInitialAtsScore(initialScore.score)
-        setAtsLoading(false)
-      }
-      
-      updateProgressSmooth(40)
-      
-      // Step 2: Annotate resume
-      setCurrentStep("Analyzing your resume...")
-      setAnnotationLoading(true)
-      
-      const annotationResponse = await annotateResume(resumeMd || '', jobDescription, keywordResponse, userNotes)
+      const annotationResponse = await annotateResume(
+        resumeMd,
+        jobDescription,
+        missingKeywords, // Use missing keywords specifically
+        userNotes.trim() || "The user didn't provide any notes, ignore this"
+      )
       
       setAnnotationData(annotationResponse)
+      setApiCheckpoints(prev => ({ ...prev, step1: true }))
+      updateProgressSmooth(50)
+      
+      // Step 2: Rewrite resume
+      setCurrentStep("Optimizing resume structure...")
+      setAnnotationLoading(true)
+      
+      const rewriteResponse = await rewriteResume(
+        annotationResponse["annotated_resume"], 
+        userNotes.trim()
+      )
+      
       setAnnotationLoading(false)
       setApiCheckpoints(prev => ({ ...prev, step2: true }))
       updateProgressSmooth(70)
       
-      // Step 3: Rewrite resume
-      setCurrentStep("Optimizing your resume...")
+      // Step 3: Calculate final ATS score
+      setCurrentStep("Calculating final ATS score...")
+      updateProgressSmooth(90)
       
-      const rewriteResponse = await rewriteResume(resumeMd || '', userNotes)
-      
-      setApiCheckpoints(prev => ({ ...prev, step3: true }))
-      updateProgressSmooth(95)
-      
-      // Calculate final ATS score
-      const finalScore = calculateAtsScore(rewriteResponse.optimized_resume, keywordResponse)
-      
-      // Prepare results data
-      const resultsData: ResultsData = {
-        resume: rewriteResponse.optimized_resume,
-        initialScore: storedInitialAtsScore || 0,
-        finalScore: finalScore.score,
-        missingKeywords: finalScore.missingKeywords.length
+      let finalAtsScore: number | undefined = undefined
+      const optimizedResume = rewriteResponse.optimized_resume || rewriteResponse
+
+      // Validate optimizedResume is a string
+      if (typeof optimizedResume !== 'string') {
+        throw new Error("Invalid resume format received from API")
       }
       
+      if (optimizedResume && keywords.length > 0) {
+        const finalAtsResult = calculateAtsScore(optimizedResume, keywords)
+        finalAtsScore = finalAtsResult.score
+      }
+      
+      // Complete optimization
+      updateProgressSmooth(100)
+      setApiCheckpoints(prev => ({ ...prev, step3: true }))
+      setCurrentStep("Optimization complete!")
+      
+      // Prepare results data using original pattern
+      const resultsData: ResultsData = {
+        resume: optimizedResume,
+        initialScore: initialScore ?? 0,     // Use local variable, not state
+        finalScore: finalAtsScore ?? 0,      // Calculated final score
+        missingKeywords: missingKeywordsCount
+      }
+      
+      console.log("📊 Final Results Data:", resultsData)
       await handlePostCompletion(resultsData)
       
     } catch (error: any) {
       if (error.name === 'AbortError') {
         console.log('Request aborted')
+        setCurrentStep("Cancelled")
         return
       }
       
       console.error('Optimization failed:', error)
-      showError(error.message || 'Optimization failed')
-      setIsSubmitting(false)
-      hideProgress()
+      setPreValidationError(error.message || 'Optimization failed')
+      setCurrentStep("Error occurred")
     } finally {
+      setIsSubmitting(false)
       setAbortController(null)
     }
   }
