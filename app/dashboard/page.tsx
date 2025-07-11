@@ -543,7 +543,7 @@ export default function DashboardPage() {
                             
                             <div>
                               <h4 className="text-blue-300 font-medium mb-1">2. Proofread keywords</h4>
-                              <p className="text-blue-200/80 text-sm">Review the extracted keywords carefully. Click to remove irrelevant ones or hold to edit them. These keywords directly impact your ATS score.</p>
+                              <p className="text-blue-200/80 text-sm">Once you add the description, the keywords and context section will popup. Review the extracted keywords carefully. Click to remove irrelevant ones or hold to edit them. These keywords directly impact your ATS score.</p>
                             </div>
                             
                             <div>
