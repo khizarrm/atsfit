@@ -1,56 +1,113 @@
-# Claude Code Instructions
+# CLAUDE.md
 
-## Core Principles
-- **Think step by step** - Break down every task into logical, sequential steps
-- **Plan first, code second** - Never write code without an approved plan
-- **Seek clarity** - Ask for more information when requirements are unclear
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Workflow Process
+## Development Commands
 
-### 1. Planning Phase
-- **ALWAYS** create a `plan.md` file first before any coding
-- Include in the plan:
-  - Clear understanding of the requirements
-  - Step-by-step breakdown of the approach
-  - Files that will be created/modified
-  - Key decisions and assumptions
-  - Potential challenges or considerations
-  - Timeline/order of implementation
+### Essential Commands
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run lint` - Run ESLint
+- `npm start` - Start production server
 
-### 2. Approval Phase
-- **WAIT for explicit approval** of the plan before proceeding
-- Do not write any code until the plan is approved
-- If plan needs changes, update `plan.md` and seek re-approval
+### Build Notes
+- ESLint and TypeScript errors are ignored during builds (see next.config.mjs)
+- Images are unoptimized for deployment compatibility
 
-### 3. Information Gathering
-- **Ask questions** when:
-  - Requirements are ambiguous or incomplete
-  - Technical specifications are missing
-  - Multiple approaches are possible and preference is unclear
-  - External dependencies or constraints are unknown
+## Project Architecture
 
-### 4. Implementation Phase
-- Follow the approved plan step by step
-- Update the plan if significant changes are needed during implementation
-- Seek approval for major deviations from the original plan
+### Core Technology Stack
+- **Frontend**: Next.js 15 with React 19, TypeScript
+- **UI Components**: Radix UI + shadcn/ui components
+- **Styling**: Tailwind CSS with CSS variables for theming
+- **State Management**: Zustand with persistence, Immer, and devtools
+- **Authentication**: Supabase Auth with local caching
+- **Database**: Supabase PostgreSQL
+- **AI Integration**: OpenAI API for resume processing
 
-## Communication Guidelines
-- Be specific about what information you need
-- Explain your reasoning for technical decisions
-- Highlight any assumptions you're making
-- Provide clear status updates on progress
+### Application Structure
 
-## Quality Standards
-- Write clean, well-documented code
-- Follow established project conventions
-- Test thoroughly before marking tasks complete
-- Consider edge cases and error handling
+#### Main Application Flow
+1. **Authentication**: Context-based auth with Supabase, cached in localStorage
+2. **Resume Setup**: Users upload/input resume content
+3. **ATS Processing**: OpenAI extracts keywords and scores resume
+4. **Results Display**: Shows ATS score, matched/missing keywords, recommendations
+5. **Resume Optimization**: AI rewrites resume based on job requirements
 
-## Before Starting Any Task
-1. Read and understand the full requirements
-2. Create a comprehensive plan in `plan.md`
-3. Ask for any clarifications needed
-4. Wait for plan approval
-5. Only then begin implementation
+#### Key Directories
+- `app/` - Next.js App Router pages and API routes
+- `components/` - React components (UI components in `ui/` subdirectory)
+- `stores/` - Zustand state management (auth, resume, UI slices)
+- `lib/` - Utilities, database operations, API clients
+- `contexts/` - React context providers (auth context)
+- `hooks/` - Custom React hooks
 
-Remember: It's better to ask too many questions than to make incorrect assumptions. Take time to plan properly - it will save time in the long run.
+#### State Management Architecture
+- **Zustand stores** with separate slices for auth, resume, and UI state
+- **Persistence** via localStorage with custom storage utilities
+- **Immer integration** for immutable state updates
+- **DevTools** support for debugging state changes
+
+### Key Components & Services
+
+#### Authentication System
+- **Auth Context** (`contexts/auth-context.tsx`) - React context with caching
+- **Auth Store** (`stores/slices/auth.ts`) - Zustand auth state
+- **Supabase Client** (`lib/supabase.ts`) - Database connection
+- **Resume Operations** (`lib/database/resume-operations.ts`) - Database queries
+
+#### ATS Processing Pipeline
+- **Current Implementation**: OpenAI API for keyword extraction and scoring
+- **Keyword Extraction**: `/api/extract-keywords/route.ts` - GPT-3.5-turbo
+- **ATS Scoring**: `lib/utils/ats-scorer.ts` - TypeScript implementation
+- **Resume Conversion**: `/api/convert-resume/route.ts` - AI-powered formatting
+- **PDF Generation**: `lib/api.ts` - HTML/CSS to PDF conversion
+
+#### UI Architecture
+- **Page Components**: Main views for each route
+- **View Components**: Complex UI sections (profile-view, results-view, etc.)
+- **Shared Components**: Reusable UI elements (shared-header, LoadingProgress)
+- **shadcn/ui**: Consistent design system components
+
+### Database Schema
+- **Users**: Managed by Supabase Auth
+- **Resumes**: User resume content stored as markdown
+- **Keywords**: Extracted from job descriptions
+- **ATS Scores**: Calculated matching scores
+
+### Important Technical Details
+
+#### State Persistence
+- Auth state cached in localStorage for 24 hours
+- Resume state persisted across sessions
+- UI preferences maintained in local storage
+
+#### API Integration
+- OpenAI API calls for keyword extraction and resume optimization
+- Supabase for user authentication and data storage
+- Custom API routes for processing workflows
+
+#### Python Backend (Currently Unused)
+- Advanced ATS processing scripts exist in `/app/` directory
+- Includes sophisticated keyword extraction, scoring, and section parsing
+- Not integrated with current TypeScript implementation
+- Could be used for offline processing or to reduce API costs
+
+### Development Workflow
+
+#### Planning Requirements
+- Create `plan.md` for significant features
+- Break down complex tasks into steps
+- Seek approval before implementation
+- Document assumptions and decisions
+
+#### Code Standards
+- Follow existing TypeScript/React patterns
+- Use established UI components from shadcn/ui
+- Maintain consistent state management patterns
+- Implement proper error handling and loading states
+
+#### Testing & Deployment
+- Build process ignores lint/type errors (configured for rapid iteration)
+- Deployment via Netlify with custom configuration
+- Environment variables required for Supabase and OpenAI
