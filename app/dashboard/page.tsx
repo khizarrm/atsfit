@@ -33,6 +33,8 @@ export default function DashboardPage() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [resumeMd, setResumeMd] = useState<string | null>(null)
 
+  const [showTutorialBar, setShowTutorialBar] = useState(true)
+
   const [jobDescription, setJobDescription] = useState("")
   const [userNotes, setUserNotes] = useState("")
 
@@ -70,6 +72,7 @@ export default function DashboardPage() {
   const [editingKeywordIndex, setEditingKeywordIndex] = useState<number | null>(null)
   const [editingKeywordValue, setEditingKeywordValue] = useState("")
   const [isHowToOpen, setIsHowToOpen] = useState(false)
+  const [showHowToCard, setShowHowToCard] = useState(true)
   
   // Keywords data (localStorage-based)
   const [keywords, setKeywords] = useState<string[]>([])
@@ -507,43 +510,87 @@ export default function DashboardPage() {
               Get your resume optimized for ATS systems and significantly improve your match score.
             </p>
             
-            {/* Additional Info Section */}
-            <Collapsible open={isHowToOpen} onOpenChange={setIsHowToOpen}>
-              <CollapsibleTrigger className="inline-flex items-center space-x-2 text-[#00FFAA] hover:text-[#00DD99] transition-colors duration-200 mt-4 mb-2">
-                <span className="text-sm font-medium">Additional Info</span>
-                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isHowToOpen ? 'rotate-180' : ''}`} />
-              </CollapsibleTrigger>
-              <CollapsibleContent className="mt-4">
-                <div className="max-w-4xl mx-auto">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
-                      <span className="text-[#00FFAA] mb-2 block">Insert your job description</span>
-                      <p className="text-gray-300">For best use and performance, add just the important stuff, not branding fluff. Focus on role requirements, skills, and qualifications. Use this only for specific jobs. If you're applying for a broad job, modify the keywords and provide instructions in the notes as necessary. You'll get faster responses with shorter, focused job descriptions.</p>
-                    </div>
-                    
-                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
-                      <span className="text-[#00FFAA] mb-2 block">Proofread keywords</span>
-                      <p className="text-gray-300">Review the extracted keywords carefully. Click to remove irrelevant ones or hold to edit them. These keywords directly impact your ATS score.</p>
-                    </div>
-                    
-                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
-                      <span className="text-[#00FFAA] mb-2 block">Additional notes (optional)</span>
-                      <p className="text-gray-300">Feel free to add anything useful. Cases can be removing a certain project, adding another one, specifying a certain aspect to focus on, or refining a certain section. When adding projects, be as specific as possible. The AI will be able to add its own points related to the job description if you aren't super specific, but better to be more accurate.</p>
-                    </div>
-                    
-                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
-                      <span className="text-[#00FFAA] mb-2 block">Limitations</span>
-                      <p className="text-gray-300">The optimization will only work according to the info provided. If your resume only has React and you give a description with C++, you won't get a 100% resume score. To optimize for this, try adding a C++ project in the description.</p>
-                    </div>
-                    
-                    <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-4">
-                      <span className="text-[#00FFAA] mb-2 block">If you need to modify your resume</span>
-                      <p className="text-gray-300">Please go to <span className="text-[#00FFAA]">Profile → Manage My Resume</span>.</p>
-                    </div>
+            {/* How to Use This Tool - Dimmed Blue Info Card */}
+            {showTutorialBar && (
+              <div className="mt-6 mb-4">
+                <div className="bg-gradient-to-r from-blue-900/30 to-blue-800/30 backdrop-blur-sm border border-blue-700/30 rounded-xl p-4 relative overflow-hidden">
+                  {/* Subtle animated background */}
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-blue-800/20 to-blue-700/20"
+                    animate={{
+                      opacity: [0.2, 0.3, 0.2]
+                    }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                  
+                  <div className="relative z-10">
+                    <Collapsible open={isHowToOpen} onOpenChange={setIsHowToOpen}>
+                      <CollapsibleTrigger className="w-full flex items-center justify-between text-left group">
+                        <div>
+                          <h3 className="text-blue-200 font-semibold text-lg">How to Use This Tool</h3>
+                          <p className="text-blue-300/70 text-sm">Important guidelines for best results</p>
+                        </div>
+                        <ChevronDown className={`w-5 h-5 text-blue-400 transition-transform duration-200 ${isHowToOpen ? 'rotate-180' : ''} group-hover:text-blue-300`} />
+                      </CollapsibleTrigger>
+                      
+                      <CollapsibleContent className="mt-4">
+                        <div className="space-y-4">
+                          <div className="space-y-4 text-left">
+                            <div>
+                              <h4 className="text-blue-300 font-medium mb-1">1. Insert your job description</h4>
+                              <p className="text-blue-200/80 text-sm">For best performance, add just the important stuff, not branding fluff. Focus on role requirements, skills, and qualifications. Use this only for specific jobs. You'll get faster responses with shorter, focused job descriptions.</p>
+                            </div>
+                            
+                            <div>
+                              <h4 className="text-blue-300 font-medium mb-1">2. Proofread keywords</h4>
+                              <p className="text-blue-200/80 text-sm">Review the extracted keywords carefully. Click to remove irrelevant ones or hold to edit them. These keywords directly impact your ATS score.</p>
+                            </div>
+                            
+                            <div>
+                              <h4 className="text-blue-300 font-medium mb-1">3. Provide additional context</h4>
+                              <p className="text-blue-200/80 text-sm">Add as much relevant information as possible related to the job description - any experience, projects, skills, or accomplishments that align with the role. The AI won't make things up, so the more relevant details you provide, the higher your score will be.</p>
+                            </div>
+                            
+                            <div>
+                              <h4 className="text-blue-300 font-medium mb-1">4. Best results requirements</h4>
+                              <p className="text-blue-200/80 text-sm">Jobs should ideally be in the same field, or your resume should already be roughly tailored to that industry. You won't get optimal results using a computer science resume for a sales position - ensure reasonable alignment between your background and target role.</p>
+                            </div>
+                            
+                            <div>
+                              <h4 className="text-blue-300 font-medium mb-1">5. Proofread the results</h4>
+                              <p className="text-blue-200/80 text-sm">Always review the optimized resume carefully before using it. The AI may not always be 100% accurate, so check for any errors or inconsistencies and make necessary adjustments.</p>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-4 grid grid-cols-6 gap-3">
+                            <div className="col-span-5 bg-blue-800/20 border border-blue-700/30 rounded-lg p-3">
+                              <p className="text-blue-200/80 text-sm">
+                                <span className="text-blue-300 font-medium">Need to modify your resume?</span> Go to{' '}
+                                <button 
+                                  onClick={() => router.push("/profile")}
+                                  className="text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors duration-200"
+                                >
+                                  Profile → Manage My Resume
+                                </button>
+                              </p>
+                            </div>
+                            
+                            <div className="col-span-1 bg-red-900/20 border border-red-700/30 rounded-lg p-2">
+                              <button 
+                                onClick={() => setShowTutorialBar(false)}
+                                className="w-full text-red-400 hover:text-red-300 text-xs font-medium transition-colors duration-200"
+                              >
+                                Close
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
                   </div>
                 </div>
-              </CollapsibleContent>
-            </Collapsible>
+              </div>
+            )}
           </div>
 
 
