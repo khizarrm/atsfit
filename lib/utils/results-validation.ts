@@ -7,6 +7,7 @@ export interface ResultsData {
   initialScore: number
   finalScore: number
   missingKeywords: number
+  summary: string
 }
 
 /**

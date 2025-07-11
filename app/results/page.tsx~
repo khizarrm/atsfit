@@ -34,26 +34,7 @@ function ResultsPageContent() {
   useEffect(() => {   
    const storedData = sessionStorage.getItem("resultsData");
    console.log("Stored data is: ", storedData)
-   if (storedData) {
-     try {
-       const parsedData = JSON.parse(storedData);
-       // Map the stored data to match the expected format
-       const mappedData = {
-         optimizedResume: parsedData.resume,
-         initialAtsScore: parsedData.initialScore,
-         finalAtsScore: parsedData.finalScore,
-         missingKeywordsCount: parsedData.missingKeywords,
-         summary: parsedData.summary
-       };
-       setResultsData(mappedData);
-     } catch (error) {
-       console.error("Failed to parse stored data:", error);
-       setError("Failed to load results data");
-     }
-   } else {
-     setError("No results data found");
-   }
-   setIsLoading(false);
+   setResultsData(storedData)
   }, [authLoading, searchParams])
 
   const handleBackToDashboard = () => {
@@ -145,7 +126,6 @@ function ResultsPageContent() {
         initialAtsScore={resultsData.initialAtsScore}
         finalAtsScore={resultsData.finalAtsScore}
         missingKeywordsCount={resultsData.missingKeywordsCount}
-        summary={resultsData.summary}
       />
     </div>
   )

@@ -27,9 +27,10 @@ interface ResultsViewProps {
   initialAtsScore?: number
   finalAtsScore?: number
   missingKeywordsCount?: number
+  summary?: string
 }
 
-export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGoToProfile, isTrialMode, user, initialAtsScore, finalAtsScore, missingKeywordsCount }: ResultsViewProps) {
+export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGoToProfile, isTrialMode, user, initialAtsScore, finalAtsScore, missingKeywordsCount, summary }: ResultsViewProps) {
   console.log("ResultsView props - initialAtsScore:", initialAtsScore, "finalAtsScore:", finalAtsScore)
   
   // Early validation to prevent rendering issues
@@ -208,6 +209,39 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
               </div>
             )}
           </div>
+
+          {/* Summary Card - Full Width */}
+          {summary && (
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="mb-8"
+            >
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 relative overflow-hidden">
+                {/* Subtle animated background */}
+                <motion.div
+                  className="absolute inset-0 bg-gradient-to-r from-[#00FFAA]/5 via-transparent to-[#00DD99]/5"
+                  animate={{
+                    opacity: [0.3, 0.5, 0.3]
+                  }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                />
+                
+                <div className="relative z-10">
+                  <div className="flex items-center mb-4">
+                    <h3 className="text-xl font-semibold text-white">Summary of Changes</h3>
+                  </div>
+                  
+                  <div className="prose prose-invert max-w-none">
+                    <p className="text-gray-300 leading-relaxed text-base whitespace-pre-line">
+                      {summary}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {/* Modern Layout - Responsive Grid */}
           <div className="grid gap-6 grid-cols-1 lg:grid-cols-4">

@@ -21,7 +21,6 @@ const BackgroundGlow = lazy(() => import('@/components/BackgroundGlow'))
 function BackgroundFallback() {
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none">
-      {/* Static central radial glow */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,255,170,0.15)_0%,rgba(0,255,170,0.08)_25%,rgba(0,255,170,0.03)_50%,transparent_70%)]" />
     </div>
   )
@@ -32,30 +31,22 @@ export default function DashboardPage() {
   const router = useRouter()
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
-  
-  // Resume data from localStorage
   const [resumeMd, setResumeMd] = useState<string | null>(null)
-  
-  // Form data
+
   const [jobDescription, setJobDescription] = useState("")
   const [userNotes, setUserNotes] = useState("")
-  
-  // Loading states
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [keywordsLoading, setKeywordsLoading] = useState(false)
   const [atsLoading, setAtsLoading] = useState(false)
   const [annotationLoading, setAnnotationLoading] = useState(false)
-  
-  // Process control
+
   const [currentStep, setCurrentStep] = useState("")
   const [abortController, setAbortController] = useState<AbortController | null>(null)
   const [progressInterval, setProgressInterval] = useState<NodeJS.Timeout | null>(null)
-  
-  // API data
-  const [annotationData, setAnnotationData] = useState<any>(null)
+
   const [currentAtsResult, setCurrentAtsResult] = useState<AtsScoreResult | null>(null)
   
-  // Results data
   const [optimizationComplete, setOptimizationComplete] = useState(false)
   const [resultsData, setResultsData] = useState<ResultsData | null>(null)
   const [optimizationResults, setOptimizationResults] = useState<{
@@ -63,14 +54,14 @@ export default function DashboardPage() {
     initialAtsScore: number
     finalAtsScore: number
     missingKeywordsCount: number
+    summary: string
   } | null>(null)
+
   const [showResults, setShowResults] = useState(false)
-  
-  // ATS score data
-  const [initialAtsScore, setInitialAtsScore] = useState<number | null>(null)
+
   const [storedInitialAtsScore, setStoredInitialAtsScore] = useState<number | null>(null)
   
-  // Checkpoint tracking
+
   const [apiCheckpoints, setApiCheckpoints] = useState({ step1: false, step2: false, step3: false })
   
   // UI state
@@ -87,9 +78,7 @@ export default function DashboardPage() {
   // Progress state (replaces UI store)
   const [progress, setProgress] = useState({ value: 0, visible: false })
 
-  // Authentication guard with localStorage-first approach
   useEffect(() => {
-    // First: Check localStorage for instant auth verification
     const cachedData = getCachedUserData()
     if (cachedData && cachedData.user) {
       console.log("📦 Dashboard: Using cached user data")
@@ -129,7 +118,6 @@ export default function DashboardPage() {
     console.log("✅ Auth context user with resume, showing dashboard")
   }, [authUser, authLoading, hasResume, router])
 
-  // Progress management functions (replacing UI store)
   const showProgress = (value: number, step: string) => {
     setProgress({ value, visible: true })
     setCurrentStep(step)
@@ -142,22 +130,18 @@ export default function DashboardPage() {
 
   const showError = (message: string) => {
     console.error(message)
-    // You can add toast notification here if needed
   }
 
   const showSuccess = (message: string) => {
     console.log(message)
-    // You can add toast notification here if needed
   }
 
   const updateProgressSmooth = (targetProgress: number) => {
-    // Clear any existing progress animation
     if (progressInterval) {
       clearInterval(progressInterval)
       setProgressInterval(null)
     }
     
-    // Smooth animation to target progress
     const currentProgress = progress.value
     const steps = Math.abs(targetProgress - currentProgress)
     const stepSize = (targetProgress - currentProgress) / Math.max(steps / 2, 1)
@@ -174,7 +158,7 @@ export default function DashboardPage() {
       } else {
         showProgress(newProgress, currentStep)
       }
-    }, 50) // Smooth 50ms intervals
+    }, 50) 
     
     setProgressInterval(interval)
   }
@@ -182,19 +166,12 @@ export default function DashboardPage() {
   // Keyword management functions
   const updateKeywords = (newKeywords: string[]) => {
     setKeywords(newKeywords)
-    // Optionally cache in localStorage
-    try {
-      localStorage.setItem('atsfit_keywords', JSON.stringify(newKeywords))
-    } catch (error) {
-      console.error('Error caching keywords:', error)
-    }
   }
 
   const handleRemoveKeyword = (indexToRemove: number) => {
     const updatedKeywords = keywords.filter((_, index) => index !== indexToRemove)
     updateKeywords(updatedKeywords)
     
-    // Recalculate ATS score with updated keywords
     if (resumeMd && updatedKeywords.length > 0) {
       const atsResult = calculateAtsScore(resumeMd, updatedKeywords)
       setCurrentAtsResult(atsResult)
@@ -215,7 +192,6 @@ export default function DashboardPage() {
       updatedKeywords[editingKeywordIndex] = editingKeywordValue.trim()
       updateKeywords(updatedKeywords)
       
-      // Recalculate ATS score with updated keywords
       if (resumeMd) {
         const atsResult = calculateAtsScore(resumeMd, updatedKeywords)
         setCurrentAtsResult(atsResult)
@@ -231,7 +207,6 @@ export default function DashboardPage() {
     setEditingKeywordValue("")
   }
 
-  // Post-completion handler
   const handlePostCompletion = async (data: ResultsData) => {
     try {
       setOptimizationComplete(true)
@@ -241,17 +216,20 @@ export default function DashboardPage() {
       setCurrentStep("Finalizing results...")
       updateProgressSmooth(110)
       
-      setTimeout(() => {
-        setOptimizationResults({
-          optimizedResume: data.resume,
-          initialAtsScore: data.initialScore,
-          finalAtsScore: data.finalScore,
-          missingKeywordsCount: data.missingKeywords
-        })
-        setShowResults(true)
-        setIsSubmitting(false)
-      }, 800)
-      
+    setOptimizationResults({
+        optimizedResume: data.resume,
+        initialAtsScore: data.initialScore,
+        finalAtsScore: data.finalScore,
+        missingKeywordsCount: data.missingKeywords,
+        summary: data.summary || "no summary"
+      })
+
+     console.log("Setting optimization results: " , optimizationResults)
+     console.log("Actual data is : ", data)
+     sessionStorage.setItem("resultsData", JSON.stringify(data)) 
+     console.log("session data" , JSON.parse(sessionStorage.getItem("resultsData") || "{}"))
+     console.log("Going to results!!")
+     router.push(`/results`)
     } catch (error) {
       console.error('Post-completion failed:', error)
       setPreValidationError(error instanceof Error ? error.message : 'Failed to show results')
@@ -259,20 +237,7 @@ export default function DashboardPage() {
     }
   }
 
-  // Navigation handlers
-  const handleBackFromResults = () => {
-    setShowResults(false)
-    setOptimizationResults(null)
-    setOptimizationComplete(false)
-    hideProgress()
-  }
 
-  const handleNextJob = (jobUrl?: string) => {
-    // Handle next job logic if needed
-    console.log('Next job:', jobUrl)
-  }
-
-  // Cancel handler
   const handleCancel = () => {
     if (abortController) {
       abortController.abort()
@@ -283,7 +248,6 @@ export default function DashboardPage() {
     setCurrentStep("")
   }
 
-  // Main submit handler
   const handleSubmit = async () => {
     if (!jobDescription.trim()) return
 
@@ -292,7 +256,6 @@ export default function DashboardPage() {
       return
     }
 
-    // Set up abort controller
     const controller = new AbortController()
     setAbortController(controller)
     
@@ -303,55 +266,41 @@ export default function DashboardPage() {
       setPreValidationError(null)
       setApiCheckpoints({ step1: false, step2: false, step3: false })
       
-      // Store the initial ATS score for before/after comparison (from currentAtsResult)
       const initialScore = currentAtsResult?.score || null
       setStoredInitialAtsScore(initialScore)
       
-      // Capture missing keywords for annotation (use missing keywords specifically)
       const missingKeywords = currentAtsResult?.missingKeywords || keywords
       const missingKeywordsCount = missingKeywords.length
       
-      console.log("🎯 Starting optimization with:")
-      console.log("Initial ATS Score:", initialScore)
-      console.log("Missing Keywords:", missingKeywords)
-      console.log("Missing Keywords Count:", missingKeywordsCount)
-      
-      // Step 1: Annotate Resume (using missing keywords)
       setCurrentStep("Analyzing resume and matching keywords...")
       updateProgressSmooth(20)
       
       const annotationResponse = await annotateResume(
         resumeMd,
         jobDescription,
-        missingKeywords, // Use missing keywords specifically
+	missingKeywords,
         userNotes.trim() || "The user didn't provide any notes, ignore this"
       )
       
-      setAnnotationData(annotationResponse)
       setApiCheckpoints(prev => ({ ...prev, step1: true }))
-      updateProgressSmooth(50)
       
-      // Step 2: Rewrite resume
       setCurrentStep("Optimizing resume structure...")
       setAnnotationLoading(true)
       
+      //Step 2: Rewriting the resume 
       const rewriteResponse = await rewriteResume(
         annotationResponse["annotated_resume"], 
         userNotes.trim()
       )
       
       setAnnotationLoading(false)
-      setApiCheckpoints(prev => ({ ...prev, step2: true }))
-      updateProgressSmooth(70)
-      
-      // Step 3: Calculate final ATS score
-      setCurrentStep("Calculating final ATS score...")
-      updateProgressSmooth(90)
       
       let finalAtsScore: number | undefined = undefined
-      const optimizedResume = rewriteResponse.optimized_resume || rewriteResponse
 
-      // Validate optimizedResume is a string
+      const optimizedResume = rewriteResponse.resume
+      const summary = rewriteResponse.summary
+      console.log("The summary is: ", summary)
+      
       if (typeof optimizedResume !== 'string') {
         throw new Error("Invalid resume format received from API")
       }
@@ -361,17 +310,16 @@ export default function DashboardPage() {
         finalAtsScore = finalAtsResult.score
       }
       
-      // Complete optimization
       updateProgressSmooth(100)
       setApiCheckpoints(prev => ({ ...prev, step3: true }))
       setCurrentStep("Optimization complete!")
       
-      // Prepare results data using original pattern
       const resultsData: ResultsData = {
         resume: optimizedResume,
         initialScore: initialScore ?? 0,     // Use local variable, not state
-        finalScore: finalAtsScore ?? 0,      // Calculated final score
-        missingKeywords: missingKeywordsCount
+        finalScore: finalAtsScore ?? 0,      
+        missingKeywords: missingKeywordsCount,
+	      summary: summary || "No summary provided"
       }
       
       console.log("📊 Final Results Data:", resultsData)
@@ -393,7 +341,6 @@ export default function DashboardPage() {
     }
   }
 
-  // ATS Score Circle Component
   const AtsScoreCircle = ({ score }: { score: number }) => {
     const circumference = 2 * Math.PI * 45
     const strokeDasharray = circumference
@@ -525,32 +472,9 @@ export default function DashboardPage() {
   }
 
   
-  console.log("Our user: ", mappedUser)
 
   // Show results view if optimization is complete
-  if (showResults && optimizationResults) {
     return (
-      <div className="min-h-screen bg-black relative text-white">
-        <Suspense fallback={<BackgroundFallback />}>
-          <BackgroundGlow />
-        </Suspense>
-        <ResultsView
-          optimizedResume={optimizationResults.optimizedResume}
-          initialAtsScore={optimizationResults.initialAtsScore}
-          finalAtsScore={optimizationResults.finalAtsScore}
-          missingKeywordsCount={optimizationResults.missingKeywordsCount}
-          onBack={handleBackFromResults}
-          onSignUp={() => router.push("/")}
-          onNextJob={handleNextJob}
-          onGoToProfile={() => {router.push("/profile")}}
-          isTrialMode={false}
-          user={mappedUser}
-        />
-      </div>
-    )
-  }
-
-  return (
     <div className="min-h-screen bg-black relative text-white">
       <Suspense fallback={<BackgroundFallback />}>
         <BackgroundGlow />
