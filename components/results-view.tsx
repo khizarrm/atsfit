@@ -287,11 +287,16 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                     <h3 className="text-xl font-semibold text-white">Summary of Changes</h3>
                   </div>
                   
-                  <div className="prose prose-invert max-w-none">
-                    <p className="text-gray-300 leading-relaxed text-base whitespace-pre-line">
-                      {summary}
-                    </p>
-                  </div>
+                  <div 
+                    className="prose prose-invert max-w-none text-gray-300 leading-relaxed text-base"
+                    style={{
+                      fontFamily: 'inherit',
+                      lineHeight: '1.6'
+                    }}
+                    dangerouslySetInnerHTML={{
+                      __html: renderMarkdownPreview(summary)
+                    }}
+                  />
                 </div>
               </div>
             </motion.div>
