@@ -288,7 +288,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                   </div>
                   
                   <div 
-                    className="prose prose-invert max-w-none text-gray-300 leading-relaxed text-base"
+                    className="prose prose-invert max-w-none text-gray-300 leading-relaxed text-base summary-content"
                     style={{
                       fontFamily: 'inherit',
                       lineHeight: '1.6'
@@ -297,6 +297,32 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                       __html: renderMarkdownPreview(summary)
                     }}
                   />
+                  <style dangerouslySetInnerHTML={{
+                    __html: `
+                      .summary-content,
+                      .summary-content p,
+                      .summary-content div,
+                      .summary-content span {
+                        color: #d1d5db !important;
+                      }
+                      .summary-content strong {
+                        color: #00FFAA !important;
+                        font-weight: 700 !important;
+                      }
+                      .summary-content em {
+                        color: #00DD99 !important;
+                        font-style: italic !important;
+                      }
+                      .summary-content u {
+                        color: #00FFAA !important;
+                        text-decoration: underline !important;
+                      }
+                      .summary-content a {
+                        color: #00FFAA !important;
+                        text-decoration: underline !important;
+                      }
+                    `
+                  }} />
                 </div>
               </div>
             </motion.div>
