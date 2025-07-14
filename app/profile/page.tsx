@@ -8,7 +8,6 @@ import { ArrowLeft, Save, Eye, EyeOff, User, FileText, CheckCircle, AlertCircle,
 import { useAuth, getCachedUserData } from "@/contexts/auth-context"
 import { saveUserResume, validateResumeContent } from "@/lib/database/resume-operations"
 import { SharedHeader } from "@/components/shared-header"
-import { generatePDF } from "@/lib/api"
 import { renderMarkdownPreview } from "@/lib/utils/preview-renderer"
 import { useRouter } from "next/navigation"
 import { generatePDFCSS, PREVIEW_CONTAINER_STYLES } from "@/lib/utils/preview-renderer"
@@ -205,38 +204,21 @@ ___________________________________________________________`
       setIsGeneratingPDF(true)
       setPdfError(null)
       
-      const result = await generatePDF(resumeContent, {
-        format: 'letter',
-        filename: 'resume.pdf'
-      })
+      // Open print view with auto-print
+      handleOpenPrintView(true)
       
-      if (!result.success) {
-        throw new Error(result.error || 'PDF generation failed')
-      }
-      
-      console.log('PDF generated successfully')
+      // Simulate brief loading for UX
+      setTimeout(() => {
+        setIsGeneratingPDF(false)
+      }, 1000)
       
     } catch (error) {
-      console.error('PDF generation failed:', error)
+      console.error('Print view failed:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
       setPdfError(errorMessage)
-      
-      // Fallback to markdown download
-      setTimeout(() => {
-        const blob = new Blob([resumeContent], { type: "text/plain" })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = "resume.md"
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-      }, 2000) // Give user time to see error
-      
-    } finally {
       setIsGeneratingPDF(false)
-      // Clear progress after a short delay
+      
+      // Clear error after delay
       setTimeout(() => {
         setPdfError(null)
       }, 3000)
@@ -269,7 +251,21 @@ ___________________________________________________________`
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Resume - Full A4 View</title>
-        <style>${css}</style>
+        <style>
+          ${css}
+          @media print {
+            @page {
+              margin: 0;
+              size: A4;
+            }
+            body {
+              margin: 0;
+              padding: 20px;
+              -webkit-print-color-adjust: exact;
+              color-adjust: exact;
+            }
+          }
+        </style>
       </head>
       <body>
         <div class="resume-container">
@@ -285,6 +281,66 @@ ___________________________________________________________`
     
     // Clean up the URL after a short delay
     setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+
+  const handleOpenPrintView = (autoPrint = false) => {
+    if (!resumeContent.trim()) {
+      showMessage('error', 'No resume content to print')
+      return
+    }
+    
+    const html = renderMarkdownPreview(resumeContent)
+    const css = generatePDFCSS(PREVIEW_CONTAINER_STYLES)
+    
+    const fullHTML = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Resume - Print Ready</title>
+        <style>
+          ${css}
+          @media print {
+            @page {
+              margin: 0;
+              size: A4;
+            }
+            body {
+              margin: 0;
+              padding: 20px;
+              -webkit-print-color-adjust: exact;
+              color-adjust: exact;
+            }
+          }
+          body {
+            background: white;
+          }
+        </style>
+        ${autoPrint ? `
+        <script>
+          window.addEventListener('load', function() {
+            setTimeout(() => {
+              window.print();
+            }, 500);
+          });
+        </script>
+        ` : ''}
+      </head>
+      <body>
+        <div class="resume-container">
+          ${html}
+        </div>
+      </body>
+      </html>
+    `
+    
+    const blob = new Blob([fullHTML], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank')
+    
+    // Clean up the URL after a short delay
+    setTimeout(() => URL.revokeObjectURL(url), 2000)
   }
 
   const handleCopy = async () => {
@@ -448,12 +504,12 @@ ___________________________________________________________`
                         {isGeneratingPDF ? (
                           <>
                             <div className="w-3 h-3 border-2 border-black border-t-transparent rounded-full mr-1 animate-spin" />
-                            Generating...
+                            Opening Print View...
                           </>
                         ) : (
                           <>
                             <Download className="mr-1 h-3 w-3" />
-                            PDF
+                            Print/Save PDF
                           </>
                         )}
                       </Button>
@@ -467,7 +523,7 @@ ___________________________________________________________`
                         <div className="h-full bg-gradient-to-r from-[#00FFAA] to-[#00DD99] animate-pulse" />
                       </div>
                       <p className="text-xs text-gray-400 mt-1">
-                        Generating PDF...
+                        Opening print dialog...
                       </p>
                     </div>
                   )}
@@ -475,7 +531,7 @@ ___________________________________________________________`
                   {/* Error message */}
                   {pdfError && (
                     <div className="text-xs text-red-400 mt-2">
-                      PDF failed: {pdfError}. Downloading markdown instead...
+                      Print view failed: {pdfError}
                     </div>
                   )}
                 </div>
