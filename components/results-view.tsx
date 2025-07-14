@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useState, useEffect, useRef } from "react"
 import { Download, Copy, ArrowLeft, Eye, EyeOff, Crown, Lock, Sparkles, User, Info } from "lucide-react"
-import { generatePDF } from "@/lib/api"
 import { SharedHeader } from "@/components/shared-header"
 import { renderMarkdownPreview } from "@/lib/utils/preview-renderer"
 import { generatePDFCSS, PREVIEW_CONTAINER_STYLES } from "@/lib/utils/preview-renderer"
@@ -91,7 +90,21 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Optimized Resume - Full A4 View</title>
-        <style>${css}</style>
+        <style>
+          ${css}
+          @media print {
+            @page {
+              margin: 0;
+              size: A4;
+            }
+            body {
+              margin: 0;
+              padding: 20px;
+              -webkit-print-color-adjust: exact;
+              color-adjust: exact;
+            }
+          }
+        </style>
       </head>
       <body>
         <div class="resume-container">
@@ -109,8 +122,66 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
-  const handleDownload = async () => {
+  const handleOpenPrintView = (autoPrint = false) => {
+    if (!optimizedResume.trim()) {
+      return
+    }
     
+    const html = renderMarkdownPreview(optimizedResume)
+    const css = generatePDFCSS(PREVIEW_CONTAINER_STYLES)
+    
+    const fullHTML = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Resume - Khizar Malik</title>
+        <style>
+          ${css}
+          @media print {
+            @page {
+              margin: 0;
+              size: A4;
+            }
+            body {
+              margin: 0;
+              padding: 20px;
+              -webkit-print-color-adjust: exact;
+              color-adjust: exact;
+            }
+          }
+          body {
+            background: white;
+          }
+        </style>
+        ${autoPrint ? `
+        <script>
+          window.addEventListener('load', function() {
+            setTimeout(() => {
+              window.print();
+            }, 500);
+          });
+        </script>
+        ` : ''}
+      </head>
+      <body>
+        <div class="resume-container">
+          ${html}
+        </div>
+      </body>
+      </html>
+    `
+    
+    const blob = new Blob([fullHTML], { type: 'text/html' })
+    const url = URL.createObjectURL(blob)
+    window.open(url, '_blank')
+    
+    // Clean up the URL after a short delay
+    setTimeout(() => URL.revokeObjectURL(url), 2000)
+  }
+
+  const handleDownload = async () => {
     if (!optimizedResume.trim()) {
       return
     }
@@ -119,38 +190,21 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
       setIsGeneratingPDF(true)
       setPdfError(null)
       
-      const result = await generatePDF(optimizedResume, {
-        format: 'letter',
-        filename: 'new-resume.pdf'
-      })
+      // Open print view with auto-print
+      handleOpenPrintView(true)
       
-      if (!result.success) {
-        throw new Error(result.error || 'PDF generation failed')
-      }
-      
-      console.log('PDF generated successfully')
+      // Simulate brief loading for UX
+      setTimeout(() => {
+        setIsGeneratingPDF(false)
+      }, 1000)
       
     } catch (error) {
-      console.error('PDF generation failed:', error)
+      console.error('Print view failed:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
       setPdfError(errorMessage)
-      
-      // Fallback to markdown download
-      setTimeout(() => {
-        const blob = new Blob([optimizedResume], { type: "text/plain" })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = "optimized-resume.md"
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-      }, 2000) // Give user time to see error
-      
-    } finally {
       setIsGeneratingPDF(false)
-      // Clear progress after a short delay
+      
+      // Clear error after delay
       setTimeout(() => {
         setPdfError(null)
       }, 3000)
@@ -567,12 +621,12 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                           transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
                           className="w-4 h-4 border-2 border-black border-t-transparent rounded-full mr-2 inline-block"
                         />
-                        Generating...
+                        Opening Print View...
                       </>
                     ) : (
                       <>
                         <Download className="mr-2 h-4 w-4 inline" />
-                        {"Download PDF"}
+                        {"Print/Save as PDF"}
                       </>
                     )}
                   </Button>
@@ -609,7 +663,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                         />
                       </div>
                       <p className="text-xs text-gray-400 mt-1 text-center">
-                        Generating PDF...
+                        Opening print dialog...
                       </p>
                     </div>
                   )}
@@ -621,7 +675,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                       animate={{ opacity: 1, y: 0 }}
                       className="text-xs text-red-400 text-center"
                     >
-                      PDF failed: {pdfError}. Downloading markdown instead...
+                      Print view failed: {pdfError}
                     </motion.div>
                   )}
                 </div>

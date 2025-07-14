@@ -104,8 +104,8 @@ export function renderMarkdownPreview(markdown: string): string {
  */
 export const PREVIEW_CONTAINER_STYLES = {
   fontFamily: 'Georgia, "Times New Roman", serif',
-  fontSize: '12px',
-  lineHeight: '1.4',
+  fontSize: '14px',
+  lineHeight: '1.2',
   color: '#111',
   backgroundColor: '#ffffff',
   padding: '20px',
@@ -164,13 +164,6 @@ export function generatePDFCSS(containerStyles = PREVIEW_CONTAINER_STYLES): stri
       color: #333;
     }
 
-    h1 + p {
-      text-align: center;
-      margin-bottom: 0.15rem;
-      font-size: 1em;
-      color: #333;
-      line-height: 1.3;
-    }
 
     .bullet-point {
       margin: 0 0 0.01rem 1.2rem;
