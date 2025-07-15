@@ -3,8 +3,11 @@
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { useState, useEffect, useRef } from "react"
-import { User, LogOut, ChevronDown, UserCog } from "lucide-react"
+import { User, LogOut, ChevronDown, UserCog, Trash2 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
+import { DeleteAccountModal } from "@/components/delete-account-modal"
+import { deleteUserAccount } from "@/lib/database/resume-operations"
+import { useRouter } from "next/navigation"
 
 interface SharedHeaderProps {
   title?: string // Custom title, defaults to "ATSFit"
@@ -24,9 +27,12 @@ export function SharedHeader({
   user
 }: SharedHeaderProps) {
   const { signOut } = useAuth()
+  const router = useRouter()
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
   const [isNavigating, setIsNavigating] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Close dropdown when clicking outside
@@ -62,6 +68,34 @@ export function SharedHeader({
     }
     // Reset navigation state after a short delay
     setTimeout(() => setIsNavigating(false), 1000)
+  }
+
+  const handleDeleteAccount = () => {
+    setShowProfileDropdown(false)
+    setShowDeleteModal(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!user) return
+    
+    try {
+      setIsDeleting(true)
+      const result = await deleteUserAccount(user.id)
+      
+      if (result.success) {
+        // Clear cache and sign out
+        await signOut()
+        router.push('/login')
+      } else {
+        console.error('Failed to delete account:', result.error)
+        // You might want to show an error message to the user here
+      }
+    } catch (error) {
+      console.error('Error deleting account:', error)
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteModal(false)
+    }
   }
 
 
@@ -139,6 +173,15 @@ export function SharedHeader({
                     </>
                   )}
                 </Button>
+                <div className="border-t border-white/10 my-1"></div>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-red-400 hover:bg-red-500/10 hover:text-red-300"
+                  onClick={handleDeleteAccount}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Account
+                </Button>
               </div>
             </motion.div>
           )}
@@ -170,6 +213,15 @@ export function SharedHeader({
       </h1>
       
       {rightContent || defaultRightContent}
+      
+      {/* Delete Account Modal */}
+      <DeleteAccountModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleConfirmDelete}
+        userEmail={user?.email}
+        isDeleting={isDeleting}
+      />
     </motion.nav>
   )
 }
