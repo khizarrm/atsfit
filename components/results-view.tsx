@@ -3,8 +3,9 @@
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { useState, useEffect, useRef } from "react"
-import { Download, Copy, ArrowLeft, Eye, EyeOff, Crown, Lock, Sparkles, User, Info } from "lucide-react"
+import { Download, Copy, ArrowLeft, Eye, EyeOff, Crown, Lock, Sparkles, User, Info, Save, Edit } from "lucide-react"
 import { SharedHeader } from "@/components/shared-header"
 import { renderMarkdownPreview } from "@/lib/utils/preview-renderer"
 import { generatePDFCSS, PREVIEW_CONTAINER_STYLES } from "@/lib/utils/preview-renderer"
@@ -54,6 +55,8 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
   const hasCalculatedRef = useRef(false)
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
   const [pdfError, setPdfError] = useState<string | null>(null)
+  const [editableResume, setEditableResume] = useState(optimizedResume)
+  const [hasChanges, setHasChanges] = useState(false)
 
   // Use the final ATS score passed from the optimization process
   useEffect(() => {
@@ -65,22 +68,42 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
   }, [finalAtsScore])
 
 
+  const handleResumeChange = (value: string) => {
+    setEditableResume(value)
+    setHasChanges(value !== optimizedResume)
+  }
+
+  const handleSaveChanges = () => {
+    // Update the session storage with the edited resume
+    const storedData = sessionStorage.getItem("resultsData")
+    if (storedData) {
+      try {
+        const parsedData = JSON.parse(storedData)
+        parsedData.resume = editableResume
+        sessionStorage.setItem("resultsData", JSON.stringify(parsedData))
+        setHasChanges(false)
+      } catch (error) {
+        console.error("Failed to save changes:", error)
+      }
+    }
+  }
+
   const handleCopy = async () => {
     if (isTrialMode) {
       onSignUp()
       return
     }
-    await navigator.clipboard.writeText(optimizedResume)
+    await navigator.clipboard.writeText(editableResume)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
 
   const handleOpenFullA4 = () => {
-    if (!optimizedResume.trim()) {
+    if (!editableResume.trim()) {
       return
     }
     
-    const html = renderMarkdownPreview(optimizedResume)
+    const html = renderMarkdownPreview(editableResume)
     const css = generatePDFCSS(PREVIEW_CONTAINER_STYLES)
     
     const fullHTML = `
@@ -123,11 +146,11 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
   }
 
   const handleOpenPrintView = (autoPrint = false) => {
-    if (!optimizedResume.trim()) {
+    if (!editableResume.trim()) {
       return
     }
     
-    const html = renderMarkdownPreview(optimizedResume)
+    const html = renderMarkdownPreview(editableResume)
     const css = generatePDFCSS(PREVIEW_CONTAINER_STYLES)
     
     const fullHTML = `
@@ -182,7 +205,7 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
   }
 
   const handleDownload = async () => {
-    if (!optimizedResume.trim()) {
+    if (!editableResume.trim()) {
       return
     }
     
@@ -581,21 +604,33 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-white font-semibold text-lg">
-                        {showPreview ? "Resume Preview" : "Optimized Resume Content"}
+                        {showPreview ? "Resume Preview" : "Editable Resume Content"}
                       </h3>
                       <p className="text-gray-400 text-sm mt-1">
-                        {showPreview ? "How your resume will look when printed" : "AI-enhanced with strategic keyword placement"}
+                        {showPreview ? "How your resume will look when printed" : "Edit and customize your AI-enhanced resume"}
                       </p>
                     </div>
-                    <Button
-                      onClick={() => setShowPreview(!showPreview)}
-                      variant="ghost"
-                      size="sm"
-                      className="text-white hover:bg-white/10 hover:text-white"
-                    >
-                      {showPreview ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
-                      {showPreview ? "Show Markdown" : "Show Preview"}
-                    </Button>
+                    <div className="flex items-center space-x-2">
+                      {!showPreview && hasChanges && (
+                        <Button
+                          onClick={handleSaveChanges}
+                          size="sm"
+                          className="bg-[#00FFAA] hover:bg-[#00DD99] text-black font-medium"
+                        >
+                          <Save className="mr-2 h-4 w-4" />
+                          Save
+                        </Button>
+                      )}
+                      <Button
+                        onClick={() => setShowPreview(!showPreview)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-white hover:bg-white/10 hover:text-white"
+                      >
+                        {showPreview ? <Edit className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+                        {showPreview ? "Edit" : "Preview"}
+                      </Button>
+                    </div>
                   </div>
                 </div>
                 <div className="p-6">
@@ -609,12 +644,26 @@ export function ResultsView({ optimizedResume, onBack, onSignUp, onNextJob, onGo
                         color: '#111'
                       }}
                       dangerouslySetInnerHTML={{
-                        __html: renderMarkdownPreview(optimizedResume)
+                        __html: renderMarkdownPreview(editableResume)
                       }}
                     />
                   ) : (
-                    <div className="bg-black/20 rounded-2xl p-6 font-mono text-sm leading-relaxed text-gray-300 max-h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
-                      <pre className="whitespace-pre-wrap">{optimizedResume}</pre>
+                    <div className="max-h-[600px]">
+                      <Textarea
+                        value={editableResume}
+                        onChange={(e) => handleResumeChange(e.target.value)}
+                        className="h-[600px] bg-black/20 border-white/20 text-white placeholder:text-gray-500 text-sm leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-2xl font-mono"
+                        placeholder="Your optimized resume content..."
+                        disabled={isTrialMode}
+                      />
+                      {isTrialMode && (
+                        <div className="mt-4 text-center">
+                          <div className="inline-flex items-center space-x-2 bg-amber-500/10 border border-amber-500/30 rounded-full px-4 py-2">
+                            <Lock className="w-4 h-4 text-amber-500" />
+                            <span className="text-amber-400 font-medium text-sm">Upgrade to edit resume</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
