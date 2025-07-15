@@ -36,18 +36,16 @@ export default function ProfilePage() {
   const [pdfError, setPdfError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
-  // Memoize the markdown preview rendering
   const renderedMarkdown = useMemo(() => renderMarkdownPreview(resumeContent), [resumeContent])
 
   useEffect(() => {
-    // Initialize immediately if we have data, regardless of loading state
+	  console.log("User cached data is: ", getCachedUserData())
     if (hasResume) {
       const cachedData = getCachedUserData()
       setResumeContent(cachedData.resumeMd)
       setOriginalContent(cachedData.resumeMd)
       setHasInitialized(true)
     } else {
-      // Only show template if we're not loading and definitely have no resume
       const template = `# YOUR NAME
 
 phone • email • website • github
@@ -106,44 +104,7 @@ phone • email • website • github
     )
   }
 
-  const chatGPTPrompt = `Convert the following resume text exactly as written into Markdown format.
-
-Instructions:
-
-Do not rephrase, rewrite, or edit any content. Do not change the format of the writing. 
-
-Use # (H1) only for my name at the top.
-
-Use ### (H3) for section headings (like EXPERIENCE, EDUCATION, SKILLS, PROJECTS).
-
-Use #### (H4) for company or project titles.
-
-Keep bullet points, line breaks, and formatting exactly as in my input. Do not add bullet points for project/experience titles, only for detailed points regarding an experience or project. 
-
-Bold small categories and project names, eg. Frameworks, Technologies. 
-
-Italicize company names, but bold the names of positions. 
-
-Underline quantifiable metrics. 
-
-Format bullet points with a '-'
-
-When returning, ensure you do not modify any content whatsoever. 
-
-Do not add a newline for job titiles and company names: keep both on the same line, with title bolded and company name italicized.
-
-When addings links, add them appropriately as follows [text](url)
-
-Ensure all contact info text below the header is seperated with spaces using '$|$' in markdown
-
-Only add urls where neccesary, never in random places
-
-Output it as plain text so I can easily copy and paste it.
-
-Resume follows below:
-___________________________________________________________`
-
-
+  
   const handleContentChange = (value: string) => {
     setResumeContent(value)
     setHasChanges(value !== originalContent)
@@ -160,7 +121,6 @@ ___________________________________________________________`
       return
     }
 
-    // Validate content first
     const validation = validateResumeContent(resumeContent)
     if (!validation.valid) {
       showMessage('error', validation.error || 'Invalid resume content')
@@ -173,7 +133,7 @@ ___________________________________________________________`
       const result = await saveUserResume(user.id, resumeContent)
       console.log('saveUserResume result:', result)
 
-      if (result.success) {
+    if (result.success) {
         setOriginalContent(resumeContent)
         setHasChanges(false)
         showMessage('success', 'Resume saved successfully!')
@@ -224,16 +184,7 @@ ___________________________________________________________`
       }, 3000)
     }
   }
-
-  const handleCopyPrompt = async () => {
-    try {
-      await navigator.clipboard.writeText(chatGPTPrompt)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch (error) {
-      console.error("Failed to copy prompt:", error)
-    }
-  }
+ 
 
   const handleOpenFullA4 = () => {
     if (!resumeContent.trim()) {
@@ -552,52 +503,6 @@ ___________________________________________________________`
                 </div>
               </div>
             )}
-          </div>
-
-          {/* ChatGPT Prompt Card */}
-          <div className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-2xl p-6 mt-6 shadow-2xl">
-            <div className="bg-white/5 border border-white/20 rounded-xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-[#00FFAA] to-[#00DD99] rounded-lg flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-black" />
-                  </div>
-                  <div>
-                    <h3 className="text-white font-semibold">ChatGPT Resume Prompt</h3>
-                    <p className="text-gray-400 text-sm">Copy this prompt and paste it into ChatGPT</p>
-                  </div>
-                </div>
-                <Button
-                  onClick={handleCopyPrompt}
-                  size="sm"
-                  className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-semibold"
-                >
-                  <Copy className="mr-2 h-4 w-4" />
-                  {copied ? "Copied!" : "Copy Prompt"}
-                </Button>
-              </div>
-              
-              <div className="bg-black/20 border border-white/10 rounded-lg p-4 font-mono text-sm text-gray-300 max-h-48 overflow-y-auto">
-                <pre className="whitespace-pre-wrap">{chatGPTPrompt}</pre>
-              </div>
-              
-              <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-blue-400 text-xs font-bold">!</span>
-                  </div>
-                  <div>
-                    <h4 className="text-blue-400 font-medium text-sm mb-1">How to use:</h4>
-                    <ol className="text-gray-400 text-sm space-y-1">
-                      <li>1. Click "Copy Prompt" above</li>
-                      <li>2. Go to ChatGPT and paste the prompt</li>
-                      <li>3. Paste in your resume afterwards</li>
-                      <li>4. Place the output in the editor above</li>
-                    </ol>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

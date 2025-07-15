@@ -27,7 +27,7 @@ function BackgroundFallback() {
 }
 
 export default function DashboardPage() {
-  const { user: authUser, loading: authLoading, hasResume } = useAuth()
+  const { user: authUser, loading: authLoading, hasResume, resumeMd: authResumeMd } = useAuth()
   const router = useRouter()
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
@@ -117,9 +117,10 @@ export default function DashboardPage() {
     }
 
     setCurrentUser(authUser)
+    setResumeMd(authResumeMd) // Set resume from auth context
     setIsCheckingAuth(false)
     console.log("✅ Auth context user with resume, showing dashboard")
-  }, [authUser, authLoading, hasResume, router])
+  }, [authUser, authLoading, hasResume, authResumeMd, router])
 
   const showProgress = (value: number, step: string) => {
     setProgress({ value, visible: true })

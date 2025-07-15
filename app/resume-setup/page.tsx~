@@ -3,11 +3,11 @@
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { updateCachedResume } from '@/contexts/auth-context'
 import { useState, useEffect, Suspense, lazy } from "react"
 import { Check, Upload, FileText, User, File } from "lucide-react"
 import { useAuth, getCachedUserData } from "@/contexts/auth-context"
-import { saveUserResume } from "@/lib/database/resume-operations"
-import { validateResumeContent } from "@/lib/database/resume-operations"
+import { saveUserResume, validateResumeContent } from "@/lib/database/resume-operations"
 import { SharedHeader } from "@/components/shared-header"
 import { useRouter } from "next/navigation"
 import { convertResumeToMarkdown } from "@/lib/api"
@@ -18,11 +18,12 @@ const BackgroundGlow = lazy(() => import('@/components/BackgroundGlow'))
 
 export default function ResumeSetupPage() {
   const router = useRouter()
-  const { user, cacheUserData } = useAuth()
+  const { user } = useAuth()
   const [resumeContent, setResumeContent] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState("")
-  const [isFormatting, setIsFormatting] = useState(false)
+  const [isExtracting, setIsExtracting] = useState(false)
+  const [isConverting, setIsConverting] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [rawText, setRawText] = useState("")
 
@@ -60,44 +61,11 @@ export default function ResumeSetupPage() {
       for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
         const page = await pdf.getPage(pageNum)
         const textContent = await page.getTextContent()
-        
-        // Sort items by position (top to bottom, left to right)
-        const sortedItems = textContent.items
-          .filter((item): item is any => 'str' in item && 'transform' in item)
-          .sort((a, b) => {
-            const yDiff = b.transform[5] - a.transform[5] // Y coordinate (higher Y = higher on page)
-            if (Math.abs(yDiff) > 5) return yDiff > 0 ? 1 : -1 // Different lines
-            return a.transform[4] - b.transform[4] // Same line, sort by X coordinate
-          })
-
-        let pageText = ''
-        let lastY = null
-        let lastX = null
-        
-        for (const item of sortedItems) {
-          const currentY = item.transform[5]
-          const currentX = item.transform[4]
-          const text = item.str
-          
-          if (lastY !== null) {
-            // Check for line break (significant Y difference)
-            if (Math.abs(currentY - lastY) > 5) {
-              pageText += '\n'
-            } else if (lastX !== null) {
-              // Same line - check for spacing
-              const xDiff = currentX - lastX
-              if (xDiff > item.width * 0.3) { // Add space if gap is larger than 30% of character width
-                pageText += ' '
-              }
-            }
-          }
-          
-          pageText += text
-          lastY = currentY
-          lastX = currentX + (item.width || 0)
-        }
-        
-        fullText += pageText + '\n\n' // Double newline between pages
+        const pageText = textContent.items
+          .filter((item): item is any => 'str' in item)
+          .map(item => item.str)
+          .join(' ')
+        fullText += pageText + '\n'
       }
 
       return fullText.trim()
@@ -118,25 +86,22 @@ export default function ResumeSetupPage() {
 
     setSelectedFile(file)
     setError('')
-    setIsFormatting(true)
+    setIsExtracting(true)
 
     try {
       const extractedText = await extractTextFromPDF(file)
       setRawText(extractedText)
+      setIsExtracting(false)
+      setIsConverting(true)
 
       const markdownContent = await convertResumeToMarkdown(extractedText)
       setResumeContent(markdownContent)
-      
-      // Cache the resume content for the editor page
-      cacheUserData(user, markdownContent)
-      
-      // Navigate to the editor page after successful conversion
-      router.push('/resume-editor')
     } catch (error) {
       setError('Failed to process PDF. Please try again.')
       console.error('PDF processing error:', error)
     } finally {
-      setIsFormatting(false)
+      setIsExtracting(false)
+      setIsConverting(false)
     }
   }
 
@@ -165,8 +130,6 @@ export default function ResumeSetupPage() {
       const result = await saveUserResume(user.id, resumeContent)
       
       if (result.success) {
-        // Cache user and resume together in one operation
-        cacheUserData(user, resumeContent)
         router.push("/dashboard")
       } else {
         setError(result.error || "Failed to save resume")
@@ -310,7 +273,7 @@ export default function ResumeSetupPage() {
                   </label>
                 </div>
                 
-                {isFormatting && (
+                {(isExtracting || isConverting) && (
                   <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <motion.div
@@ -319,13 +282,55 @@ export default function ResumeSetupPage() {
                         className="w-5 h-5 border-2 border-[#00FFAA] border-t-transparent rounded-full"
                       />
                       <p className="text-[#00FFAA] text-sm">
-                        Formatting your resume...
+                        {isExtracting ? "Extracting text from PDF..." : "Converting to markdown..."}
                       </p>
                     </div>
                   </div>
                 )}
               </div>
 
+              {/* Resume Content Area */}
+              {resumeContent && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-4"
+                >
+                  <div className="space-y-3">
+                    <label className="text-white font-medium flex items-center space-x-2">
+                      <FileText className="w-4 h-4 text-[#00FFAA]" />
+                      <span>Markdown Resume (You can edit this)</span>
+                    </label>
+                    <Textarea
+                      value={resumeContent}
+                      onChange={(e) => setResumeContent(e.target.value)}
+                      placeholder="Markdown resume will appear here..."
+                      className="min-h-[400px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 text-sm leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-2xl"
+                    />
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Button
+                      onClick={handleSave}
+                      disabled={!resumeContent.trim() || isSaving}
+                      className="flex-1 bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-bold px-6 py-3 text-lg rounded-xl hover:scale-105 transition-all duration-300 hover:shadow-[0_0_40px_rgba(0,255,170,0.4)] shadow-[0_0_20px_rgba(0,255,170,0.2)] disabled:opacity-50 disabled:hover:scale-100"
+                    >
+                      {isSaving ? (
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                          className="w-5 h-5 border-2 border-black border-t-transparent rounded-full mr-2"
+                        />
+                      ) : (
+                        <Check className="mr-2 h-5 w-5" />
+                      )}
+                      {isSaving ? "Saving..." : "Save & Continue"}
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
 
             </motion.div>
 

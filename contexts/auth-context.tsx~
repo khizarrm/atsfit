@@ -13,7 +13,6 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ data: any; error: any }>
   signOut: () => Promise<{ error: any }>
   hasResume: boolean
-  cacheUserData: (user: User | null, resumeMd: string | null) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -40,10 +39,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       console.log("CACHE DATA BEING STORED:", { userEmail: user?.email, resumeLength: resumeMd?.length })
       localStorage.setItem(CACHE_KEYS.AUTH_STATE, JSON.stringify(cacheData))
-      
-      // Update auth context state
-      setResumeMd(resumeMd)
-      setHasResume(!!resumeMd?.trim())
     } catch (error) {
       console.error('Error caching user data:', error)
     }
@@ -195,7 +190,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setHasResume(false)
       setResumeMd(null)
       setLoading(false)
-      // Remove immediate caching - will cache when resume is added
+      cacheUserData(result.data.user, null)
     }
     
     return result
@@ -249,7 +244,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signOut,
     hasResume,
-    cacheUserData,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

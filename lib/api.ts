@@ -163,7 +163,9 @@ Use ### (H3) for section headings (like EXPERIENCE, EDUCATION, SKILLS, PROJECTS)
 
 Use #### (H4) for company or project titles.
 
-Keep bullet points, line breaks, and formatting exactly as in my input. Do not add bullet points for project/experience titles, only for detailed points regarding an experience or project. 
+Mantain the structure of the resume
+
+Keep bullet points, line breaks, and formatting exactly as in my input. Do not add bullet points for project/experience titles, certifications, or tech stack,only for detailed points regarding an experience or project. 
 
 Bold small categories and project names, eg. Frameworks, Technologies. 
 
@@ -180,7 +182,6 @@ Do not add a newline for job titiles and company names: keep both on the same li
 When addings links, add them appropriately as follows [text](url)
 
 Ensure all contact info text below the header is seperated with spaces using '$|$' in markdown
-** NOTE: For contact info, ensure there are only 3 pieces. If more, remove the least relevant one. **
 
 Only add urls where neccesary, never in random places
 
@@ -196,7 +197,7 @@ ___________________________________________________________`;
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",

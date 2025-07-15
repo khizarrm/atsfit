@@ -144,6 +144,91 @@ export async function extractKeywordsFromJobDescription(jobDescription: string, 
   return keywords;
 }
 
+export async function convertResumeToMarkdown(resumeText: string, abortSignal?: AbortSignal): Promise<string> {
+  const openaiApiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
+  
+  if (!openaiApiKey) {
+    throw new Error("OpenAI API key not configured");
+  }
+
+  const chatGPTPrompt = `Convert the following resume text exactly as written into Markdown format.
+
+Instructions:
+
+Do not rephrase, rewrite, or edit any content. Do not change the format of the writing. 
+
+Use # (H1) only for my name at the top.
+
+Use ### (H3) for section headings (like EXPERIENCE, EDUCATION, SKILLS, PROJECTS).
+
+Use #### (H4) for company or project titles.
+
+Mantain the structure of the resume
+
+Keep bullet points, line breaks, and formatting exactly as in my input. Do not add bullet points for project/experience titles, certifications, or tech stack,only for detailed points regarding an experience or project. 
+
+Bold small categories and project names, eg. Frameworks, Technologies. 
+
+Italicize company names, but bold the names of positions. 
+
+Underline quantifiable metrics. 
+
+Format bullet points with a '-'
+
+When returning, ensure you do not modify any content whatsoever. 
+
+Do not add a newline for job titiles and company names: keep both on the same line, with title bolded and company name italicized.
+
+When addings links, add them appropriately as follows [text](url)
+
+Ensure all contact info text below the header is seperated with spaces using '$|$' in markdown
+
+Only add urls where neccesary, never in random places
+
+Output it as plain text so I can easily copy and paste it.
+
+Resume follows below:
+___________________________________________________________`;
+
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${openaiApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: chatGPTPrompt
+        },
+        {
+          role: "user",
+          content: resumeText
+        }
+      ],
+      max_tokens: 2000,
+      temperature: 0.1,
+    }),
+    signal: abortSignal,
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.error?.message || "Failed to convert resume to markdown");
+  }
+
+  const data = await res.json();
+  const content = data.choices[0]?.message?.content;
+
+  if (!content) {
+    throw new Error("No response from OpenAI");
+  }
+
+  return content.trim();
+}
+
 export async function fetchAtsScore(abortSignal?: AbortSignal, resumeType: 'old' | 'new' = 'old'): Promise<AtsScoreResponse> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
