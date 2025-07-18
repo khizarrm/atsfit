@@ -2,53 +2,107 @@ import { HOST_URL } from './variables';
 import { renderMarkdownPreview, generatePDFCSS, PREVIEW_CONTAINER_STYLES } from '@/lib/utils/preview-renderer';
 
 export async function annotateResume(resume_content: string, job_description: string, keywords: string[], user_notes: string) {
-  const res = await fetch(`${HOST_URL}/api/annotate`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      resume_content,
-      keywords,
-      job_description,
-      user_notes
-    }),
-  });
+  try {
+    const res = await fetch(`${HOST_URL}/api/annotate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        resume_content,
+        keywords,
+        job_description,
+        user_notes
+      }),
+    });
 
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.detail || "Annotation failed");
+    if (!res.ok) {
+      let errorMessage = "Annotation failed";
+      
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.detail || errorData.error || `HTTP ${res.status}: ${res.statusText}`;
+      } catch (jsonError) {
+        // If we can't parse JSON, use status-based error message
+        errorMessage = `HTTP ${res.status}: ${res.statusText}`;
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    const data = await res.json();
+    
+    console.log("Annotated Resume:", data.annotated_resume);
+    
+    return data;
+  } catch (error) {
+    // Handle network errors (like "Failed to fetch")
+    if (error instanceof Error) {
+      if (error.message.includes('Failed to fetch')) {
+        throw new Error('Network connection failed. Please check your internet connection and try again.');
+      }
+      if (error.message.includes('NetworkError')) {
+        throw new Error('Network error occurred. Please check your internet connection and try again.');
+      }
+      if (error.message.includes('timeout')) {
+        throw new Error('Request timed out. Please try again.');
+      }
+      // Re-throw other errors as-is
+      throw error;
+    }
+    throw new Error('An unexpected error occurred');
   }
-
-  const data = await res.json();
-  
-  console.log("Annotated Resume:", data.annotated_resume);
-  
-  return data;
 }
 
 export async function rewriteResume(resume_md: string, usernotes: string) {
-  const res = await fetch(`${HOST_URL}/api/rewrite`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      resume_md,
-      usernotes
-    }),
-  });
+  try {
+    const res = await fetch(`${HOST_URL}/api/rewrite`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        resume_md,
+        usernotes
+      }),
+    });
 
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.detail || "Rewrite failed");
+    if (!res.ok) {
+      let errorMessage = "Rewrite failed";
+      
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.detail || errorData.error || `HTTP ${res.status}: ${res.statusText}`;
+      } catch (jsonError) {
+        // If we can't parse JSON, use status-based error message
+        errorMessage = `HTTP ${res.status}: ${res.statusText}`;
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    const data = await res.json();
+    
+    console.log("Optimized Resume:", data);
+    
+    return JSON.parse(data);
+  } catch (error) {
+    // Handle network errors (like "Failed to fetch")
+    if (error instanceof Error) {
+      if (error.message.includes('Failed to fetch')) {
+        throw new Error('Network connection failed. Please check your internet connection and try again.');
+      }
+      if (error.message.includes('NetworkError')) {
+        throw new Error('Network error occurred. Please check your internet connection and try again.');
+      }
+      if (error.message.includes('timeout')) {
+        throw new Error('Request timed out. Please try again.');
+      }
+      // Re-throw other errors as-is
+      throw error;
+    }
+    throw new Error('An unexpected error occurred');
   }
-
-  const data = await res.json();
-  
-  console.log("Optimized Resume:", data);
-  
-  return JSON.parse(data);
 }
 
 export interface AtsScoreResponse {
@@ -68,80 +122,110 @@ export async function extractKeywordsFromJobDescription(jobDescription: string, 
     throw new Error("OpenAI API key not configured");
   }
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${openaiApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content: `You are an expert ATS keyword extractor.
-          Your job: extract 15-20 **specific technical keywords** from a job description.
-          Ignore all the company fluff and just look at what the job requirments are.
-
-          ✅ INCLUDE ONLY:
-          - Programming languages (e.g. "Python", "JavaScript")
-          - Frameworks and libraries (e.g. "React", "Spring Boot")
-          - Tools and technologies (e.g. "Docker", "Kubernetes")
-          - Cloud services (e.g. "AWS Lambda", "Azure Functions")
-          - Databases (e.g. "PostgreSQL", "MongoDB")
-          - Methodologies (e.g. "Agile", "Scrum")
-          - Certifications (e.g. "AWS Certified", "PMP")
-          - Industry-specific technical terms
-
-          ❌ EXCLUDE:
-          - Job titles (e.g. "Software Engineer", "Intern")
-          - Company names
-          - Soft skills (e.g. "communication", "teamwork")
-          - Business terms (e.g. "experience", "responsible")
-          - Location names
-          - Salary or years of experience
-          - Generic terms like "strong", "excellent", "good"
-
-          **Return only a JSON array of strings with the final keywords.**`
-        },
-        {
-          role: "user",
-          content: `Extract ATS-relevant keywords from this job description:\n\n${jobDescription}`
-        }
-      ],
-      max_tokens: 500,
-      temperature: 0.1,
-    }),
-    signal: abortSignal,
-  });
-
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.error?.message || "Failed to extract keywords from OpenAI");
-  }
-
-  const data = await res.json();
-  const content = data.choices[0]?.message?.content;
-
-  if (!content) {
-    throw new Error("No response from OpenAI");
-  }
-
-  // Parse the JSON response from OpenAI
-  let keywords: string[];
   try {
-    keywords = JSON.parse(content);
-  } catch (parseError) {
-    console.error("Failed to parse OpenAI response:", content);
-    throw new Error("Invalid response format from OpenAI");
-  }
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${openaiApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert ATS keyword extractor for computer science jobs.
+            Your job: extract 15-20 **specific technical keywords** from a job description.
+            Ignore all the company fluff and just look at what the job requirments are.
 
-  // Validate that it's an array of strings
-  if (!Array.isArray(keywords) || !keywords.every(k => typeof k === "string")) {
-    throw new Error("Invalid keywords format received");
+            ✅ INCLUDE ONLY:
+            - Programming languages (e.g. "Python", "JavaScript")
+            - Frameworks and libraries (e.g. "React", "Spring Boot")
+            - Tools and technologies (e.g. "Docker", "Kubernetes")
+            - Cloud services (e.g. "AWS Lambda", "Azure Functions")
+            - Databases (e.g. "PostgreSQL", "MongoDB")
+            - Methodologies (e.g. "Agile", "Scrum")
+            - Certifications (e.g. "AWS Certified", "PMP")
+            - Industry-specific technical terms
+
+            ❌ EXCLUDE:
+            - Job titles (e.g. "Software Engineer", "Intern")
+            - Company names
+            - Other Uneccesary Info
+            - Soft skills (e.g. "communication", "teamwork")
+            - Business terms (e.g. "experience", "responsible")
+            - Location names
+            - Salary or years of experience
+            - Generic terms like "strong", "excellent", "good"
+
+            Look at the requirments and nice to have section if given to find the most important keywords
+
+            **Return only a JSON array of strings with the final keywords.**`
+          },
+          {
+            role: "user",
+            content: `Extract ATS-relevant keywords from this job description:\n\n${jobDescription}`
+          }
+        ],
+        max_tokens: 500,
+        temperature: 0.1,
+      }),
+      signal: abortSignal,
+    });
+
+    if (!res.ok) {
+      let errorMessage = "Failed to extract keywords from OpenAI";
+      
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.error?.message || errorData.detail || errorData.error || `HTTP ${res.status}: ${res.statusText}`;
+      } catch (jsonError) {
+        // If we can't parse JSON, use status-based error message
+        errorMessage = `HTTP ${res.status}: ${res.statusText}`;
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    const data = await res.json();
+    const content = data.choices[0]?.message?.content;
+
+    if (!content) {
+      throw new Error("No response from OpenAI");
+    }
+
+    // Parse the JSON response from OpenAI
+    let keywords: string[];
+    try {
+      keywords = JSON.parse(content);
+    } catch (parseError) {
+      console.error("Failed to parse OpenAI response:", content);
+      throw new Error("Invalid response format from OpenAI");
+    }
+
+    // Validate that it's an array of strings
+    if (!Array.isArray(keywords) || !keywords.every(k => typeof k === "string")) {
+      throw new Error("Invalid keywords format received");
+    }
+    
+    return keywords;
+  } catch (error) {
+    // Handle network errors (like "Failed to fetch")
+    if (error instanceof Error) {
+      if (error.message.includes('Failed to fetch')) {
+        throw new Error('Network connection failed. Please check your internet connection and try again.');
+      }
+      if (error.message.includes('NetworkError')) {
+        throw new Error('Network error occurred. Please check your internet connection and try again.');
+      }
+      if (error.message.includes('timeout')) {
+        throw new Error('Request timed out. Please try again.');
+      }
+      // Re-throw other errors as-is
+      throw error;
+    }
+    throw new Error('An unexpected error occurred');
   }
-  
-  return keywords;
 }
 
 export async function convertResumeToMarkdown(resumeText: string, abortSignal?: AbortSignal): Promise<string> {
@@ -190,43 +274,70 @@ Output it as plain text so I can easily copy and paste it.
 Resume follows below:
 ___________________________________________________________`;
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${openaiApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: chatGPTPrompt
-        },
-        {
-          role: "user",
-          content: resumeText
-        }
-      ],
-      max_tokens: 2000,
-      temperature: 0.1,
-    }),
-    signal: abortSignal,
-  });
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${openaiApiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: chatGPTPrompt
+          },
+          {
+            role: "user",
+            content: resumeText
+          }
+        ],
+        max_tokens: 2000,
+        temperature: 0.1,
+      }),
+      signal: abortSignal,
+    });
 
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.error?.message || "Failed to convert resume to markdown");
+    if (!res.ok) {
+      let errorMessage = "Failed to convert resume to markdown";
+      
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.error?.message || errorData.detail || errorData.error || `HTTP ${res.status}: ${res.statusText}`;
+      } catch (jsonError) {
+        // If we can't parse JSON, use status-based error message
+        errorMessage = `HTTP ${res.status}: ${res.statusText}`;
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    const data = await res.json();
+    const content = data.choices[0]?.message?.content;
+
+    if (!content) {
+      throw new Error("No response from OpenAI");
+    }
+
+    return content.trim();
+  } catch (error) {
+    // Handle network errors (like "Failed to fetch")
+    if (error instanceof Error) {
+      if (error.message.includes('Failed to fetch')) {
+        throw new Error('Network connection failed. Please check your internet connection and try again.');
+      }
+      if (error.message.includes('NetworkError')) {
+        throw new Error('Network error occurred. Please check your internet connection and try again.');
+      }
+      if (error.message.includes('timeout')) {
+        throw new Error('Request timed out. Please try again.');
+      }
+      // Re-throw other errors as-is
+      throw error;
+    }
+    throw new Error('An unexpected error occurred');
   }
-
-  const data = await res.json();
-  const content = data.choices[0]?.message?.content;
-
-  if (!content) {
-    throw new Error("No response from OpenAI");
-  }
-
-  return content.trim();
 }
 
 export async function fetchAtsScore(abortSignal?: AbortSignal, resumeType: 'old' | 'new' = 'old'): Promise<AtsScoreResponse> {
@@ -235,24 +346,50 @@ export async function fetchAtsScore(abortSignal?: AbortSignal, resumeType: 'old'
     "resume-type": resumeType  // Pass resume-type as header
   };
   
-  const res = await fetch(`${HOST_URL}/api/ats-score`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({}), // Empty body since API reads from files
-    signal: abortSignal,
-  });
+  try {
+    const res = await fetch(`${HOST_URL}/api/ats-score`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({}), // Empty body since API reads from files
+      signal: abortSignal,
+    });
 
+    if (!res.ok) {
+      let errorMessage = "ATS score analysis failed";
+      
+      try {
+        const errorData = await res.json();
+        errorMessage = errorData.detail || errorData.error || `HTTP ${res.status}: ${res.statusText}`;
+      } catch (jsonError) {
+        // If we can't parse JSON, use status-based error message
+        errorMessage = `HTTP ${res.status}: ${res.statusText}`;
+      }
+      
+      throw new Error(errorMessage);
+    }
 
-  if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.detail || "ATS score analysis failed");
+    const data = await res.json();
+    
+    console.log("ATS Score Analysis:", data);
+    
+    return data;
+  } catch (error) {
+    // Handle network errors (like "Failed to fetch")
+    if (error instanceof Error) {
+      if (error.message.includes('Failed to fetch')) {
+        throw new Error('Network connection failed. Please check your internet connection and try again.');
+      }
+      if (error.message.includes('NetworkError')) {
+        throw new Error('Network error occurred. Please check your internet connection and try again.');
+      }
+      if (error.message.includes('timeout')) {
+        throw new Error('Request timed out. Please try again.');
+      }
+      // Re-throw other errors as-is
+      throw error;
+    }
+    throw new Error('An unexpected error occurred');
   }
-
-  const data = await res.json();
-  
-  console.log("ATS Score Analysis:", data);
-  
-  return data;
 }
 
 export interface PDFGenerationOptions {
