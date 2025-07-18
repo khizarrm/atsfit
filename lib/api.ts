@@ -243,11 +243,13 @@ Do not rephrase, rewrite, or edit any content. Do not change the format of the w
 
 Use # (H1) only for my name at the top.
 
-Use ### (H3) for section headings (like EXPERIENCE, EDUCATION, SKILLS, PROJECTS).
+Use ### (H3) for section headings (like EXPERIENCE, EDUCATION, SKILLS, PROJECTS, CERTIFICATIONS, etc).
 
 Use #### (H4) for company or project titles.
 
 Mantain the structure of the resume
+
+Add section dividers where appropriate
 
 Keep bullet points, line breaks, and formatting exactly as in my input. Do not add bullet points for project/experience titles, certifications, or tech stack,only for detailed points regarding an experience or project. 
 
@@ -264,6 +266,8 @@ When returning, ensure you do not modify any content whatsoever.
 Do not add a newline for job titiles and company names: keep both on the same line, with title bolded and company name italicized.
 
 When addings links, add them appropriately as follows [text](url)
+
+Shorten urls names when needed, and just replace with hyperlinks (eg. instead of github/username, just have [Github](https/...)). This is only if a link is provided
 
 Ensure all contact info text below the header is seperated with spaces using '$|$' in markdown
 
