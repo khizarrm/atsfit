@@ -64,11 +64,20 @@ Return the keywords as a JSON array of strings. Each keyword should be a specifi
     })
 
     if (!response.ok) {
-      const errorData = await response.json()
-      console.error('OpenAI API error:', errorData)
+      let errorMessage = 'Failed to extract keywords from OpenAI'
+      
+      try {
+        const errorData = await response.json()
+        console.error('OpenAI API error:', errorData)
+        errorMessage = errorData.error?.message || errorData.detail || errorData.error || `HTTP ${response.status}: ${response.statusText}`
+      } catch (jsonError) {
+        // If we can't parse JSON, use status-based error message
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`
+      }
+      
       return NextResponse.json(
-        { error: 'Failed to extract keywords from OpenAI' },
-        { status: 500 }
+        { error: errorMessage },
+        { status: response.status }
       )
     }
 

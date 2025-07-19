@@ -132,7 +132,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Get current session if no cache
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Auth session error:', error)
+        // Clear potentially corrupted tokens
+        clearAuthCache()
+        supabase.auth.signOut()
+        setHasResume(false)
+        setResumeMd(null)
+        setLoading(false)
+        return
+      }
+      
       setSession(session)
       setUser(session?.user ?? null)
       
@@ -157,7 +168,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth state changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Handle token refresh errors
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        console.warn('Token refresh failed - clearing cache and signing out')
+        clearAuthCache()
+        setSession(null)
+        setUser(null)
+        setHasResume(false)
+        setResumeMd(null)
+        setLoading(false)
+        return
+      }
+      
+      if (event === 'SIGNED_OUT') {
+        clearAuthCache()
+        setSession(null)
+        setUser(null)
+        setHasResume(false)
+        setResumeMd(null)
+        setLoading(false)
+        return
+      }
+      
       setSession(session)
       setUser(session?.user ?? null)
       

@@ -94,14 +94,14 @@ export default function LoginPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="flex flex-col items-center justify-center min-h-screen relative px-8"
+        className="flex flex-col items-center justify-start min-h-screen relative px-4 sm:px-8 pt-20 sm:pt-24 pb-24 sm:pb-32"
       >
 
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1, duration: 0.6 }}
-          className="absolute top-8 right-8 z-20"
+          className="absolute top-4 sm:top-8 right-4 sm:right-8 z-20"
         >
           <Button
             onClick={() => {
@@ -111,10 +111,11 @@ export default function LoginPage() {
               setError("")
             }}
             variant="ghost"
-            className="border border-white/20 text-white hover:bg-white/10 hover:text-white bg-transparent px-6 py-2 text-sm rounded-xl transition-all duration-300"
+            className="border border-white/20 text-white hover:bg-white/10 hover:text-white bg-transparent px-3 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg sm:rounded-xl transition-all duration-300"
           >
-            <Mail className="mr-2 h-4 w-4" />
-            Sign In
+            <Mail className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Sign In</span>
+            <span className="sm:hidden">Sign In</span>
           </Button>
         </motion.div>
         
@@ -122,20 +123,20 @@ export default function LoginPage() {
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.8 }}
-          className="text-center z-10 max-w-4xl"
+          className="text-center z-10 max-w-4xl w-full"
         >
           {/* Logo */}
           <motion.div
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.4, duration: 0.6 }}
-            className="mb-8"
+            className="mb-6 sm:mb-8"
           >
-            <h1 className="text-6xl font-bold bg-gradient-to-r from-[#00FFAA] to-[#00CC88] bg-clip-text text-transparent mb-4">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-[#00FFAA] to-[#00CC88] bg-clip-text text-transparent mb-3 sm:mb-4">
               Passr
             </h1>
-            <p className="text-gray-300 text-xl mb-2">AI-Powered Resume Optimization</p>
-            <p className="text-gray-400 text-lg">Get your resume past ATS systems with 90+ compatibility scores</p>
+            <p className="text-gray-300 text-lg sm:text-xl mb-1 sm:mb-2 px-2">AI-Powered Resume Optimization</p>
+            <p className="text-gray-400 text-base sm:text-lg px-2">Get your resume past ATS systems with 90+ compatibility scores</p>
           </motion.div>
 
           {/* Features Grid */}
@@ -143,28 +144,28 @@ export default function LoginPage() {
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.6, duration: 0.6 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
+            className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12"
           >
-            <div className="bg-white/3 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/5 transition-all duration-300">
-              <Target className="w-8 h-8 text-[#00FFAA] mb-4 mx-auto" />
-              <h3 className="text-white font-semibold mb-2">ATS Optimization</h3>
-              <p className="text-gray-400 text-sm">
+            <div className="bg-white/3 backdrop-blur-md border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:bg-white/5 transition-all duration-300">
+              <Target className="w-6 h-6 sm:w-8 sm:h-8 text-[#00FFAA] mb-3 sm:mb-4 mx-auto" />
+              <h3 className="text-white font-semibold mb-2 text-sm sm:text-base">ATS Optimization</h3>
+              <p className="text-gray-400 text-xs sm:text-sm">
                 Advanced keyword matching and formatting for maximum ATS compatibility
               </p>
             </div>
 
-            <div className="bg-white/3 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/5 transition-all duration-300">
-              <Zap className="w-8 h-8 text-[#00FFAA] mb-4 mx-auto" />
-              <h3 className="text-white font-semibold mb-2">AI-Powered Analysis</h3>
-              <p className="text-gray-400 text-sm">
+            <div className="bg-white/3 backdrop-blur-md border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:bg-white/5 transition-all duration-300">
+              <Zap className="w-6 h-6 sm:w-8 sm:h-8 text-[#00FFAA] mb-3 sm:mb-4 mx-auto" />
+              <h3 className="text-white font-semibold mb-2 text-sm sm:text-base">AI-Powered Analysis</h3>
+              <p className="text-gray-400 text-xs sm:text-sm">
                 Smart content optimization using advanced machine learning algorithms
               </p>
             </div>
 
-            <div className="bg-white/3 backdrop-blur-md border border-white/10 rounded-2xl p-6 hover:bg-white/5 transition-all duration-300">
-              <TrendingUp className="w-8 h-8 text-[#00FFAA] mb-4 mx-auto" />
-              <h3 className="text-white font-semibold mb-2">90+ ATS Score</h3>
-              <p className="text-gray-400 text-sm">
+            <div className="bg-white/3 backdrop-blur-md border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:bg-white/5 transition-all duration-300">
+              <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-[#00FFAA] mb-3 sm:mb-4 mx-auto" />
+              <h3 className="text-white font-semibold mb-2 text-sm sm:text-base">90+ ATS Score</h3>
+              <p className="text-gray-400 text-xs sm:text-sm">
                 Achieve industry-leading ATS compatibility scores for better job prospects
               </p>
             </div>
@@ -175,23 +176,23 @@ export default function LoginPage() {
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.8, duration: 0.6 }}
-            className="mb-12"
+            className="mb-8 sm:mb-12"
           >
-            <div className="flex flex-wrap justify-center gap-4 text-sm">
-              <div className="flex items-center space-x-2 bg-[#00FFAA]/10 border border-[#00FFAA]/30 rounded-full px-4 py-2">
-                <CheckCircle className="w-4 h-4 text-[#00FFAA]" />
+            <div className="flex flex-wrap justify-center gap-2 sm:gap-4 text-xs sm:text-sm px-2">
+              <div className="flex items-center space-x-1 sm:space-x-2 bg-[#00FFAA]/10 border border-[#00FFAA]/30 rounded-full px-3 sm:px-4 py-1.5 sm:py-2">
+                <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-[#00FFAA]" />
                 <span className="text-gray-300">Instant Analysis</span>
               </div>
-              <div className="flex items-center space-x-2 bg-[#00FFAA]/10 border border-[#00FFAA]/30 rounded-full px-4 py-2">
-                <CheckCircle className="w-4 h-4 text-[#00FFAA]" />
+              <div className="flex items-center space-x-1 sm:space-x-2 bg-[#00FFAA]/10 border border-[#00FFAA]/30 rounded-full px-3 sm:px-4 py-1.5 sm:py-2">
+                <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-[#00FFAA]" />
                 <span className="text-gray-300">Keyword Optimization</span>
               </div>
-              <div className="flex items-center space-x-2 bg-[#00FFAA]/10 border border-[#00FFAA]/30 rounded-full px-4 py-2">
-                <CheckCircle className="w-4 h-4 text-[#00FFAA]" />
+              <div className="flex items-center space-x-1 sm:space-x-2 bg-[#00FFAA]/10 border border-[#00FFAA]/30 rounded-full px-3 sm:px-4 py-1.5 sm:py-2">
+                <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-[#00FFAA]" />
                 <span className="text-gray-300">Format Enhancement</span>
               </div>
-              <div className="flex items-center space-x-2 bg-[#00FFAA]/10 border border-[#00FFAA]/30 rounded-full px-4 py-2">
-                <CheckCircle className="w-4 h-4 text-[#00FFAA]" />
+              <div className="flex items-center space-x-1 sm:space-x-2 bg-[#00FFAA]/10 border border-[#00FFAA]/30 rounded-full px-3 sm:px-4 py-1.5 sm:py-2">
+                <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-[#00FFAA]" />
                 <span className="text-gray-300">Industry Metrics</span>
               </div>
             </div>
@@ -211,9 +212,9 @@ export default function LoginPage() {
                 setPassword("")
                 setError("")
               }}
-              className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-bold px-8 py-6 text-lg rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(0,255,170,0.4)] shadow-[0_0_20px_rgba(0,255,170,0.2)]"
+              className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-bold px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg rounded-xl sm:rounded-2xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(0,255,170,0.4)] shadow-[0_0_20px_rgba(0,255,170,0.2)] w-full sm:w-auto max-w-sm"
             >
-              <UserPlus className="mr-3 h-5 w-5" />
+              <UserPlus className="mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5" />
               Create Account
             </Button>
           </motion.div>
@@ -438,14 +439,14 @@ export default function LoginPage() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 1.4, duration: 0.6 }}
-          className="absolute bottom-8 left-0 right-0 text-center z-10"
+          className="mt-8 sm:mt-12 text-center z-10"
         >
-          <span className="text-gray-500 text-sm">Made by </span>
+          <span className="text-gray-500 text-xs sm:text-sm">Made by </span>
           <a
             href="https://khizarmalik.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-gray-400 hover:text-[#00FFAA] transition-colors duration-300 border-b border-gray-400 hover:border-[#00FFAA] pb-1 font-medium"
+            className="text-gray-400 hover:text-[#00FFAA] transition-colors duration-300 border-b border-gray-400 hover:border-[#00FFAA] pb-1 font-medium text-xs sm:text-sm"
           >
             Khizar Malik
           </a>

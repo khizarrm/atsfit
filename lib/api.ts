@@ -85,7 +85,16 @@ export async function rewriteResume(resume_md: string, usernotes: string) {
     
     console.log("Optimized Resume:", data);
     
-    return JSON.parse(data);
+    // Clean up the response if it's wrapped in markdown code blocks
+    let cleanedData = data;
+    if (typeof data === 'string') {
+      cleanedData = data
+        .replace(/```json\n?/g, '') // Remove ```json opening
+        .replace(/```\n?/g, '') // Remove ``` closing
+        .trim();
+    }
+    
+    return JSON.parse(cleanedData);
   } catch (error) {
     // Handle network errors (like "Failed to fetch")
     if (error instanceof Error) {

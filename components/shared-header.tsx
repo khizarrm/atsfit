@@ -101,22 +101,22 @@ export function SharedHeader({
 
   // Default left content (empty to maintain centering)
   const defaultLeftContent = (
-    <div className="flex items-center space-x-4 w-24"> {/* Fixed width for centering */}
+    <div className="flex items-center space-x-4 w-16 sm:w-20 lg:w-24"> {/* Responsive width for centering */}
     </div>
   )
 
   // Default right content (profile dropdown or sign up)
   const defaultRightContent = (
-    <div className="flex items-center space-x-4 w-24 justify-end"> {/* Fixed width for centering */}
+    <div className="flex items-center space-x-2 sm:space-x-4 w-16 sm:w-20 lg:w-24 justify-end"> {/* Responsive width for centering */}
       {user ? (
         <div className="relative" ref={dropdownRef}>
           <Button 
             variant="ghost" 
-            className="text-white hover:bg-white/10 hover:text-white h-10 px-2 flex items-center"
+            className="text-white hover:bg-white/10 hover:text-white h-8 sm:h-10 px-1 sm:px-2 flex items-center"
             onClick={() => setShowProfileDropdown(!showProfileDropdown)}
           >
-            <User className="h-5 w-5" />
-            <ChevronDown className="h-3 w-3 ml-1" />
+            <User className="h-4 w-4 sm:h-5 sm:w-5" />
+            <ChevronDown className="h-3 w-3 ml-0.5 sm:ml-1 hidden sm:block" />
           </Button>
           
           {showProfileDropdown && (
@@ -190,9 +190,10 @@ export function SharedHeader({
         onSignUp && (
           <Button
             onClick={onSignUp}
-            className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-semibold px-4 py-2 text-sm rounded-xl transition-all duration-300"
+            className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-semibold px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm rounded-lg sm:rounded-xl transition-all duration-300 whitespace-nowrap"
           >
-            Get Started Free
+            <span className="hidden sm:inline">Get Started Free</span>
+            <span className="sm:hidden">Sign Up</span>
           </Button>
         )
       )}
@@ -204,11 +205,11 @@ export function SharedHeader({
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.05 }}
-      className="flex items-center justify-between p-6 bg-white/3 backdrop-blur-xl border-b border-white/5"
+      className="flex items-center justify-between p-3 sm:p-4 lg:p-6 bg-white/3 backdrop-blur-xl border-b border-white/5"
     >
       {leftContent || defaultLeftContent}
       
-      <h1 className="text-2xl font-bold bg-gradient-to-r from-[#00FFAA] to-[#00CC88] bg-clip-text text-transparent flex-1 text-center">
+      <h1 className="text-lg sm:text-xl lg:text-2xl font-bold bg-gradient-to-r from-[#00FFAA] to-[#00CC88] bg-clip-text text-transparent flex-1 text-center px-2 sm:px-4">
         {title}
       </h1>
       

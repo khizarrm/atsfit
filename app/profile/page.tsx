@@ -83,7 +83,6 @@ phone • email • website • github
   }, [hasResume, loading, hasInitialized])
 
   
-  // Only show loading if we haven't initialized AND we don't have cached data
   if (loading && !hasInitialized && !hasResume) {
     return (
       <motion.div
@@ -108,14 +107,12 @@ phone • email • website • github
   const handleContentChange = (value: string) => {
     setResumeContent(value)
     setHasChanges(value !== originalContent)
-    // Clear any existing messages when user starts typing
     if (message) {
       setMessage(null)
     }
   }
 
   const handleSave = async () => {
-    console.log("Saving...")
     if (!user || !resumeContent.trim()) {
       showMessage('error', 'Please enter resume content')
       return
@@ -128,6 +125,7 @@ phone • email • website • github
     }
 
     try {
+
       setIsSaving(true)
       
       const result = await saveUserResume(user.id, resumeContent)
@@ -137,7 +135,6 @@ phone • email • website • github
         setOriginalContent(resumeContent)
         setHasChanges(false)
         
-        // Update local cache and auth context
         updateCachedResume(resumeContent)
         cacheUserData(user, resumeContent)
         
@@ -169,10 +166,8 @@ phone • email • website • github
       setIsGeneratingPDF(true)
       setPdfError(null)
       
-      // Open print view with auto-print
       handleOpenPrintView(true)
       
-      // Simulate brief loading for UX
       setTimeout(() => {
         setIsGeneratingPDF(false)
       }, 1000)
@@ -183,7 +178,6 @@ phone • email • website • github
       setPdfError(errorMessage)
       setIsGeneratingPDF(false)
       
-      // Clear error after delay
       setTimeout(() => {
         setPdfError(null)
       }, 3000)
@@ -234,8 +228,6 @@ phone • email • website • github
     const blob = new Blob([fullHTML], { type: 'text/html' })
     const url = URL.createObjectURL(blob)
     window.open(url, '_blank')
-    
-    // Clean up the URL after a short delay
     setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
@@ -294,8 +286,6 @@ phone • email • website • github
     const blob = new Blob([fullHTML], { type: 'text/html' })
     const url = URL.createObjectURL(blob)
     window.open(url, '_blank')
-    
-    // Clean up the URL after a short delay
     setTimeout(() => URL.revokeObjectURL(url), 2000)
   }
 

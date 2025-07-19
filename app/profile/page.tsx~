@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useState, useEffect, useMemo, lazy} from "react"
 import { ArrowLeft, Save, Eye, EyeOff, User, FileText, CheckCircle, AlertCircle, Download, Copy } from "lucide-react"
-import { useAuth, getCachedUserData } from "@/contexts/auth-context"
+import { useAuth, getCachedUserData, updateCachedResume } from "@/contexts/auth-context"
 import { saveUserResume, validateResumeContent } from "@/lib/database/resume-operations"
 import { SharedHeader } from "@/components/shared-header"
 import { renderMarkdownPreview } from "@/lib/utils/preview-renderer"
@@ -23,7 +23,7 @@ const BackgroundGlow = lazy(() => import('@/components/BackgroundGlow'))
 
 
 export default function ProfilePage() {
-  const { user, loading, hasResume } = useAuth()
+  const { user, loading, hasResume, cacheUserData } = useAuth()
   const router = useRouter()
   const [resumeContent, setResumeContent] = useState("")
   const [hasInitialized, setHasInitialized] = useState(false)
@@ -136,6 +136,11 @@ phone • email • website • github
     if (result.success) {
         setOriginalContent(resumeContent)
         setHasChanges(false)
+        
+        // Update local cache and auth context
+        updateCachedResume(resumeContent)
+        cacheUserData(user, resumeContent)
+        
         showMessage('success', 'Resume saved successfully!')
       } else {
         showMessage('error', result.error || 'Failed to save resume')
