@@ -540,24 +540,24 @@ export default function DashboardPage() {
         />
 
         {/* Main Content */}
-        <div className="flex-1 flex items-start justify-center px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-20 sm:pb-24">
+        <div className="flex-1 flex items-start justify-center px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 pb-12 sm:pb-16">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="w-full max-w-sm sm:max-w-lg md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl"
+          className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl"
         >
           {/* Always Visible Header */}
-          <div className="text-center mb-4 sm:mb-6 lg:mb-8">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-2 sm:mb-3 lg:mb-4">Optimize your resume</h2>
-            <p className="text-gray-300 text-sm sm:text-base lg:text-lg xl:text-xl mb-2 px-2 sm:px-4">
+          <div className="text-center mb-3 sm:mb-4 lg:mb-6">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2 sm:mb-3">Optimize your resume</h2>
+            <p className="text-gray-300 text-sm sm:text-base mb-2 px-2 sm:px-4">
               Get your resume optimized for ATS systems and significantly improve your match score.
             </p>
             
             {/* How to Use This Tool - Dimmed Blue Info Card */}
             {showTutorialBar && (
-              <div className="mt-4 sm:mt-6 mb-3 sm:mb-4">
-                <div className="bg-gradient-to-r from-blue-900/30 to-blue-800/30 backdrop-blur-sm border border-blue-700/30 rounded-xl p-3 sm:p-4 lg:p-5 relative overflow-hidden">
+              <div className="mt-3 sm:mt-4 mb-2 sm:mb-3">
+                <div className="bg-gradient-to-r from-blue-900/30 to-blue-800/30 backdrop-blur-sm border border-blue-700/30 rounded-lg p-2 sm:p-3 relative overflow-hidden">
                   {/* Subtle animated background */}
                   <motion.div
                     className="absolute inset-0 bg-gradient-to-r from-blue-800/20 to-blue-700/20"
@@ -651,7 +651,7 @@ export default function DashboardPage() {
               annotationLoading={annotationLoading}
             />
           ) : (
-            <div className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-2xl space-y-4 sm:space-y-5 lg:space-y-6">
+            <div className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-xl p-3 sm:p-4 shadow-2xl space-y-3 sm:space-y-4">
             {/* Error Display handled by toasts */}
 
 
@@ -673,11 +673,11 @@ Include:
 • Required skills and qualifications
 • Experience requirements
 • Company information"
-                  className="min-h-[200px] sm:min-h-[250px] lg:min-h-[300px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 text-sm sm:text-base lg:text-lg leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-xl sm:rounded-2xl"
+                  className="min-h-[150px] sm:min-h-[180px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 text-sm sm:text-base leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-lg"
                 />
 
                 <motion.div
-                  className="absolute inset-0 rounded-2xl pointer-events-none"
+                  className="absolute inset-0 rounded-lg pointer-events-none"
                   animate={{
                     boxShadow:
                       jobDescription.length > 0
@@ -863,11 +863,11 @@ Include:
               </div>
             )}
 
-            <div className="flex justify-center mt-6 sm:mt-8">
+            <div className="flex justify-center mt-4 sm:mt-6">
               <Button
                 onClick={handleSubmit}
                 disabled={!jobDescription.trim() || isSubmitting || keywordsLoading || keywords.length === 0}
-                className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-bold px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg rounded-xl hover:scale-105 transition-all duration-300 hover:shadow-[0_0_40px_rgba(0,255,170,0.4)] shadow-[0_0_20px_rgba(0,255,170,0.2)] disabled:opacity-50 disabled:hover:scale-100 w-full sm:w-auto"
+                className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-bold px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base rounded-lg hover:scale-105 transition-all duration-300 hover:shadow-[0_0_40px_rgba(0,255,170,0.4)] shadow-[0_0_20px_rgba(0,255,170,0.2)] disabled:opacity-50 disabled:hover:scale-100 w-full sm:w-auto"
               >
                 {isSubmitting ? (
                   <motion.div
