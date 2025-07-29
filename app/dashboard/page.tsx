@@ -6,7 +6,7 @@ import { useAuth, getCachedUserData } from "@/contexts/auth-context"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Send, Info, Sparkles, ChevronDown } from "lucide-react"
+import { Send, Info, Sparkles, ChevronDown, ArrowRight } from "lucide-react"
 import { annotateResume, rewriteResume, AtsScoreResponse, extractKeywordsFromJobDescription } from "@/lib/api"
 import { calculateAtsScore, AtsScoreResult } from "@/lib/utils/ats-scorer"
 import { LoadingProgress } from "@/components/LoadingProgress"
@@ -33,7 +33,14 @@ export default function DashboardPage() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [resumeMd, setResumeMd] = useState<string | null>(null)
 
-  const [showTutorialBar, setShowTutorialBar] = useState(true)
+  const [showTutorialBar, setShowTutorialBar] = useState(() => {
+    // Check localStorage on initial load
+    if (typeof window !== 'undefined') {
+      const tutorialBarClosed = localStorage.getItem('tutorialBarClosed')
+      return tutorialBarClosed !== 'true'
+    }
+    return true
+  })
 
   const [jobDescription, setJobDescription] = useState("")
   const [userNotes, setUserNotes] = useState("")
@@ -218,7 +225,7 @@ export default function DashboardPage() {
       
       setCurrentStep("Finalizing results...")
       
-    setOptimizationResults({
+      setOptimizationResults({
         optimizedResume: data.resume,
         initialAtsScore: data.initialScore,
         finalAtsScore: data.finalScore,
@@ -226,9 +233,17 @@ export default function DashboardPage() {
         summary: data.summary || "no summary"
       })
 
-     sessionStorage.setItem("resultsData", JSON.stringify(data)) 
-     console.log("Going to results!!") 
-     router.push(`/results`)
+      sessionStorage.setItem("resultsData", JSON.stringify(data)) 
+      console.log("Going to results!!") 
+      
+      // Set optimization complete and stop submitting before navigation
+      setOptimizationComplete(true)
+      setIsSubmitting(false)
+      
+      // Small delay to ensure state updates are processed
+      setTimeout(() => {
+        router.push(`/results`)
+      }, 100)
     } catch (error) {
       console.error('Post-completion failed:', error)
       setPreValidationError(error instanceof Error ? error.message : 'Failed to show results')
@@ -365,7 +380,7 @@ export default function DashboardPage() {
   }
 
   const AtsScoreCircle = ({ score }: { score: number }) => {
-    const circumference = 2 * Math.PI * 45
+    const circumference = 2 * Math.PI * 35
     const strokeDasharray = circumference
     const strokeDashoffset = circumference - (score / 100) * circumference
     
@@ -376,23 +391,23 @@ export default function DashboardPage() {
     }
     
     return (
-      <div className="relative w-20 h-20 sm:w-24 sm:h-24">
-        <svg className="w-20 h-20 sm:w-24 sm:h-24 transform -rotate-90" viewBox="0 0 100 100">
+      <div className="relative w-16 h-16 sm:w-20 sm:h-20">
+        <svg className="w-16 h-16 sm:w-20 sm:h-20 transform -rotate-90" viewBox="0 0 100 100">
           <circle
             cx="50"
             cy="50"
-            r="45"
+            r="35"
             fill="none"
             stroke="rgba(255,255,255,0.1)"
-            strokeWidth="8"
+            strokeWidth="6"
           />
           <motion.circle
             cx="50"
             cy="50"
-            r="45"
+            r="35"
             fill="none"
             stroke={getScoreColor(score)}
-            strokeWidth="8"
+            strokeWidth="6"
             strokeLinecap="round"
             strokeDasharray={strokeDasharray}
             initial={{ strokeDashoffset: circumference }}
@@ -401,7 +416,7 @@ export default function DashboardPage() {
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-lg sm:text-xl font-bold text-white">{Math.round(score)}</span>
+          <span className="text-sm sm:text-base font-bold text-white">{Math.round(score)}</span>
         </div>
       </div>
     )
@@ -473,6 +488,19 @@ export default function DashboardPage() {
     }
   }, [progressInterval])
 
+  // Reset optimization state when component unmounts or user navigates away
+  useEffect(() => {
+    return () => {
+      // Reset optimization state to prevent lingering state issues
+      setIsSubmitting(false)
+      setOptimizationComplete(false)
+      setResultsData(null)
+      setOptimizationResults(null)
+      setCurrentStep("")
+      hideProgress()
+    }
+  }, [])
+
   // Show loading screen while checking authentication
   if (isCheckingAuth) {
     return (
@@ -522,7 +550,7 @@ export default function DashboardPage() {
 
   // Show results view if optimization is complete
     return (
-    <div className="min-h-screen bg-black relative text-white">
+    <div className="min-h-screen bg-black relative text-white flex flex-col">
       <Suspense fallback={<BackgroundFallback />}>
         <BackgroundGlow />
       </Suspense>
@@ -540,24 +568,24 @@ export default function DashboardPage() {
         />
 
         {/* Main Content */}
-        <div className="flex-1 flex items-start justify-center px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 pb-20 sm:pb-24">
+        <div className="flex-1 flex items-start justify-center px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="w-full max-w-sm sm:max-w-lg md:max-w-3xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl"
+          className="w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl"
         >
           {/* Always Visible Header */}
-          <div className="text-center mb-4 sm:mb-6 lg:mb-8">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-2 sm:mb-3 lg:mb-4">Optimize your resume</h2>
-            <p className="text-gray-300 text-sm sm:text-base lg:text-lg xl:text-xl mb-2 px-2 sm:px-4">
+          <div className="text-center mb-3 sm:mb-4 lg:mb-6">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-white mb-1 sm:mb-2 lg:mb-3">Optimize your resume</h2>
+            <p className="text-gray-300 text-xs sm:text-sm lg:text-base xl:text-lg mb-2 px-2 sm:px-4">
               Get your resume optimized for ATS systems and significantly improve your match score.
             </p>
             
             {/* How to Use This Tool - Dimmed Blue Info Card */}
             {showTutorialBar && (
-              <div className="mt-4 sm:mt-6 mb-3 sm:mb-4">
-                <div className="bg-gradient-to-r from-blue-900/30 to-blue-800/30 backdrop-blur-sm border border-blue-700/30 rounded-xl p-3 sm:p-4 lg:p-5 relative overflow-hidden">
+              <div className="mt-3 sm:mt-4 mb-2 sm:mb-3">
+                <div className="bg-gradient-to-r from-blue-900/30 to-blue-800/30 backdrop-blur-sm border border-blue-700/30 rounded-lg p-2 sm:p-3 lg:p-4 relative overflow-hidden">
                   {/* Subtle animated background */}
                   <motion.div
                     className="absolute inset-0 bg-gradient-to-r from-blue-800/20 to-blue-700/20"
@@ -571,10 +599,10 @@ export default function DashboardPage() {
                     <Collapsible open={isHowToOpen} onOpenChange={setIsHowToOpen}>
                       <CollapsibleTrigger className="w-full flex items-center justify-between text-left group">
                         <div>
-                          <h3 className="text-blue-200 font-semibold text-base sm:text-lg">How to Use This Tool</h3>
-                          <p className="text-blue-300/70 text-xs sm:text-sm">Important guidelines for best results</p>
+                          <h3 className="text-blue-200 font-semibold text-sm sm:text-base">How to Use This Tool</h3>
+                          <p className="text-blue-300/70 text-xs">Important guidelines for best results</p>
                         </div>
-                        <ChevronDown className={`w-4 h-4 sm:w-5 sm:h-5 text-blue-400 transition-transform duration-200 ${isHowToOpen ? 'rotate-180' : ''} group-hover:text-blue-300`} />
+                        <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 text-blue-400 transition-transform duration-200 ${isHowToOpen ? 'rotate-180' : ''} group-hover:text-blue-300`} />
                       </CollapsibleTrigger>
                       
                       <CollapsibleContent className="mt-4">
@@ -621,7 +649,10 @@ export default function DashboardPage() {
                             
                             <div className="sm:w-20 bg-red-900/20 border border-red-700/30 rounded-lg p-2">
                               <button 
-                                onClick={() => setShowTutorialBar(false)}
+                                onClick={() => {
+                                  setShowTutorialBar(false)
+                                  localStorage.setItem('tutorialBarClosed', 'true')
+                                }}
                                 className="w-full text-red-400 hover:text-red-300 text-xs font-medium transition-colors duration-200"
                               >
                                 Close
@@ -638,7 +669,7 @@ export default function DashboardPage() {
           </div>
 
 
-          {/* Conditional Rendering: Form or Loading Progress */}
+          {/* Conditional Rendering: Form, Loading Progress, or Redirecting */}
           {isSubmitting ? (
             <LoadingProgress 
               progress={progress.value}
@@ -650,8 +681,60 @@ export default function DashboardPage() {
               atsLoading={atsLoading}
               annotationLoading={annotationLoading}
             />
+          ) : optimizationComplete ? (
+            // Show brief redirecting state
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-2xl text-center max-w-lg mx-auto"
+            >
+              <motion.div
+                className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-4 sm:mb-6 bg-gradient-to-br from-[#00FFAA]/20 to-[#00DD99]/20 border-2 border-[#00FFAA]/50 rounded-xl flex items-center justify-center"
+                animate={{
+                  boxShadow: [
+                    "0 0 0px rgba(0,255,170,0)",
+                    "0 0 30px rgba(0,255,170,0.4)", 
+                    "0 0 0px rgba(0,255,170,0)"
+                  ]
+                }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <ArrowRight className="w-6 h-6 sm:w-7 sm:h-7 text-[#00FFAA]" />
+              </motion.div>
+              
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2 sm:mb-4">
+                Optimization Complete!
+              </h2>
+              
+              <p className="text-gray-300 text-sm sm:text-base lg:text-lg mb-4 sm:mb-6">
+                Taking you to your results...
+              </p>
+              
+              <motion.div 
+                className="flex items-center justify-center space-x-2"
+                animate={{ opacity: [0.8, 1, 0.8] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <motion.div 
+                  className="w-2 h-2 bg-[#00FFAA] rounded-full"
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <motion.div 
+                  className="w-2 h-2 bg-[#00FFAA] rounded-full"
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "easeInOut", delay: 0.2 }}
+                />
+                <motion.div 
+                  className="w-2 h-2 bg-[#00FFAA] rounded-full"
+                  animate={{ scale: [1, 1.3, 1] }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+                />
+              </motion.div>
+            </motion.div>
           ) : (
-            <div className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-2xl sm:rounded-3xl p-4 sm:p-6 lg:p-8 shadow-2xl space-y-4 sm:space-y-5 lg:space-y-6">
+            <div className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 shadow-2xl space-y-3 sm:space-y-4 lg:space-y-5">
             {/* Error Display handled by toasts */}
 
 
@@ -673,7 +756,7 @@ Include:
 • Required skills and qualifications
 • Experience requirements
 • Company information"
-                  className="min-h-[200px] sm:min-h-[250px] lg:min-h-[300px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 text-sm sm:text-base lg:text-lg leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-xl sm:rounded-2xl"
+                  className="min-h-[150px] sm:min-h-[180px] lg:min-h-[220px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 text-xs sm:text-sm lg:text-base leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-lg sm:rounded-xl"
                 />
 
                 <motion.div
@@ -788,13 +871,13 @@ Include:
 
                       {/* ATS Score Card */}
                       <div className="lg:col-span-1 order-1 lg:order-2">
-                        <div className="bg-white/5 border border-white/20 rounded-xl p-3 sm:p-4 h-full flex flex-col items-center justify-center text-center min-h-[120px] sm:min-h-[140px]">
-                          <h4 className="text-white font-medium text-xs sm:text-sm mb-2 sm:mb-3">ATS Score</h4>
+                        <div className="bg-white/5 border border-white/20 rounded-lg p-2 sm:p-3 h-full flex flex-col items-center justify-center text-center min-h-[100px] sm:min-h-[120px]">
+                          <h4 className="text-white font-medium text-xs mb-2">ATS Score</h4>
                           {currentAtsResult !== null ? (
-                            <>
-                              <div className="scale-90 sm:scale-100">
-                                <AtsScoreCircle score={currentAtsResult.score} />
-                              </div>
+                                                          <>
+                                <div className="scale-75 sm:scale-90">
+                                  <AtsScoreCircle score={currentAtsResult.score} />
+                                </div>
                               <p className="text-gray-400 text-xs mt-1 sm:mt-2">
                                 {currentAtsResult.score >= 80 
                                   ? "Excellent!" 
@@ -806,14 +889,14 @@ Include:
                                 }
                               </p>
                             </>
-                          ) : (
-                            <>
-                              <div className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center bg-white/5 rounded-full border border-white/10 mb-2">
-                                <span className="text-gray-400 text-xs">No Score</span>
-                              </div>
-                              <p className="text-gray-400 text-xs">Upload resume</p>
-                            </>
-                          )}
+                                                      ) : (
+                              <>
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-white/5 rounded-full border border-white/10 mb-2">
+                                  <span className="text-gray-400 text-xs">No Score</span>
+                                </div>
+                                <p className="text-gray-400 text-xs">Upload resume</p>
+                              </>
+                            )}
                         </div>
                       </div>
                     </div>
@@ -844,7 +927,7 @@ Include:
                     - 'I made X project, here's the link: [link]. Add it to the projects section. I used React, ShadCn, and Supabase for backend.'
                     - 'Change the name of my Project X to Project Y, and add a point about how I used railway for the backend'
                     If you leave this blank, the AI will just optimize your resume based on the description."
-                    className="min-h-[100px] sm:min-h-[120px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 text-xs sm:text-sm leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-xl"
+                    className="min-h-[80px] sm:min-h-[100px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 text-xs sm:text-sm leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-lg"
                   />
                   <motion.div
                     className="absolute inset-0 rounded-xl pointer-events-none"
@@ -863,11 +946,11 @@ Include:
               </div>
             )}
 
-            <div className="flex justify-center mt-6 sm:mt-8">
+            <div className="flex justify-center mt-4 sm:mt-6">
               <Button
                 onClick={handleSubmit}
                 disabled={!jobDescription.trim() || isSubmitting || keywordsLoading || keywords.length === 0}
-                className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-bold px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg rounded-xl hover:scale-105 transition-all duration-300 hover:shadow-[0_0_40px_rgba(0,255,170,0.4)] shadow-[0_0_20px_rgba(0,255,170,0.2)] disabled:opacity-50 disabled:hover:scale-100 w-full sm:w-auto"
+                className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-bold px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base rounded-lg hover:scale-105 transition-all duration-300 hover:shadow-[0_0_40px_rgba(0,255,170,0.4)] shadow-[0_0_20px_rgba(0,255,170,0.2)] disabled:opacity-50 disabled:hover:scale-100 w-full sm:w-auto"
               >
                 {isSubmitting ? (
                   <motion.div
@@ -891,14 +974,14 @@ Include:
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 1.0, duration: 0.6 }}
-          className="text-center p-4 sm:p-6 z-10 mt-auto"
+          className="text-center p-3 sm:p-4 z-10 mt-auto border-t border-white/5 bg-black/20 backdrop-blur-sm"
         >
-          <span className="text-gray-500 text-xs sm:text-sm">Made by </span>
+          <span className="text-gray-500 text-xs">Made by </span>
           <a
             href="https://khizarmalik.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-gray-400 hover:text-[#00FFAA] transition-colors duration-300 border-b border-gray-400 hover:border-[#00FFAA] pb-1 font-medium text-xs sm:text-sm"
+            className="text-gray-400 hover:text-[#00FFAA] transition-colors duration-300 border-b border-gray-400 hover:border-[#00FFAA] pb-1 font-medium text-xs"
           >
             Khizar Malik
           </a>

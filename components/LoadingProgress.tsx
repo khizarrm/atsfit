@@ -80,11 +80,11 @@ export function LoadingProgress({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-3xl p-8 shadow-2xl text-center max-w-2xl mx-auto"
+      className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-2xl text-center max-w-lg mx-auto"
     >
       {/* Icon */}
       <motion.div
-        className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-[#00FFAA]/20 to-[#00DD99]/20 border-2 border-[#00FFAA]/50 rounded-2xl flex items-center justify-center"
+        className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-4 sm:mb-6 bg-gradient-to-br from-[#00FFAA]/20 to-[#00DD99]/20 border-2 border-[#00FFAA]/50 rounded-xl flex items-center justify-center"
         animate={{
           boxShadow: [
             "0 0 0px rgba(0,255,170,0)",
@@ -94,16 +94,16 @@ export function LoadingProgress({
         }}
         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
       >
-        <CurrentIcon className="w-8 h-8 text-[#00FFAA]" />
+        <CurrentIcon className="w-6 h-6 sm:w-7 sm:h-7 text-[#00FFAA]" />
       </motion.div>
       
       {/* Phase Title */}
-      <h2 className="text-3xl font-bold text-white mb-4">
+      <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-2 sm:mb-4">
         {phase}
       </h2>
       
       {/* Status Message */}
-      <p className="text-gray-300 text-lg mb-6">
+      <p className="text-gray-300 text-sm sm:text-base lg:text-lg mb-4 sm:mb-6">
         {message}
       </p>
       
@@ -113,14 +113,14 @@ export function LoadingProgress({
           key={currentStep}
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-[#00FFAA] text-sm font-medium mb-8"
+          className="text-[#00FFAA] text-xs sm:text-sm font-medium mb-4 sm:mb-6"
         >
           {currentStep}
         </motion.p>
       )}
 
       {/* Progress Indicator */}
-      <div className="mb-8">
+      <div className="mb-4 sm:mb-6">
         {progress >= 100 ? (
           // Post-completion progress bar
           <div className="w-full max-w-md mx-auto">

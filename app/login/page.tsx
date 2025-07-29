@@ -87,14 +87,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black relative text-white">
+    <div className="min-h-screen bg-black relative text-white flex flex-col">
       <BackgroundGlow />
       
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="flex flex-col items-center justify-start min-h-screen relative px-4 sm:px-8 pt-20 sm:pt-24 pb-24 sm:pb-32"
+        className="flex flex-col items-center justify-start flex-1 relative px-4 sm:px-8 pt-20 sm:pt-24 pb-8"
       >
 
         <motion.div
@@ -433,25 +433,25 @@ export default function LoginPage() {
             </motion.div>
           </motion.div>
         )}
-
-        {/* Footer */}
-        <motion.footer
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 1.4, duration: 0.6 }}
-          className="mt-8 sm:mt-12 text-center z-10"
-        >
-          <span className="text-gray-500 text-xs sm:text-sm">Made by </span>
-          <a
-            href="https://khizarmalik.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-400 hover:text-[#00FFAA] transition-colors duration-300 border-b border-gray-400 hover:border-[#00FFAA] pb-1 font-medium text-xs sm:text-sm"
-          >
-            Khizar Malik
-          </a>
-        </motion.footer>
       </motion.div>
+
+      {/* Footer */}
+      <motion.footer
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 1.4, duration: 0.6 }}
+        className="text-center p-3 sm:p-4 z-10 border-t border-white/5 bg-black/20 backdrop-blur-sm"
+      >
+        <span className="text-gray-500 text-xs">Made by </span>
+        <a
+          href="https://khizarmalik.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-gray-400 hover:text-[#00FFAA] transition-colors duration-300 border-b border-gray-400 hover:border-[#00FFAA] pb-1 font-medium text-xs"
+        >
+          Khizar Malik
+        </a>
+      </motion.footer>
     </div>
   )
 }
