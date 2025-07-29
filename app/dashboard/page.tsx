@@ -6,7 +6,7 @@ import { useAuth, getCachedUserData } from "@/contexts/auth-context"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Send, Info, Sparkles, ChevronDown, ArrowRight } from "lucide-react"
+import { Send, Info, Sparkles, ChevronDown, ArrowRight, Target, FileText, Lightbulb, CheckCircle } from "lucide-react"
 import { annotateResume, rewriteResume, AtsScoreResponse, extractKeywordsFromJobDescription } from "@/lib/api"
 import { calculateAtsScore, AtsScoreResult } from "@/lib/utils/ats-scorer"
 import { LoadingProgress } from "@/components/LoadingProgress"
@@ -390,9 +390,26 @@ export default function DashboardPage() {
       return "#FF6B6B"
     }
     
+    const getScoreGradient = (score: number) => {
+      if (score >= 80) return "from-[#00FFAA] to-[#00DD99]"
+      if (score >= 60) return "from-[#FFD700] to-[#FFA500]"
+      return "from-[#FF6B6B] to-[#FF4757]"
+    }
+    
     return (
-      <div className="relative w-16 h-16 sm:w-20 sm:h-20">
-        <svg className="w-16 h-16 sm:w-20 sm:h-20 transform -rotate-90" viewBox="0 0 100 100">
+      <div className="relative w-20 h-20 sm:w-24 sm:h-24">
+        <svg className="w-20 h-20 sm:w-24 sm:h-24 transform -rotate-90" viewBox="0 0 100 100">
+          {/* Background circle with glow */}
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+              <feMerge> 
+                <feMergeNode in="coloredBlur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+          
           <circle
             cx="50"
             cy="50"
@@ -401,6 +418,7 @@ export default function DashboardPage() {
             stroke="rgba(255,255,255,0.1)"
             strokeWidth="6"
           />
+          
           <motion.circle
             cx="50"
             cy="50"
@@ -412,11 +430,18 @@ export default function DashboardPage() {
             strokeDasharray={strokeDasharray}
             initial={{ strokeDashoffset: circumference }}
             animate={{ strokeDashoffset }}
-            transition={{ duration: 1, ease: "easeOut" }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+            filter="url(#glow)"
           />
         </svg>
+        
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-sm sm:text-base font-bold text-white">{Math.round(score)}</span>
+          <div className="text-center">
+            <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-white to-gray-200 bg-clip-text text-transparent">
+              {Math.round(score)}
+            </span>
+            <div className="text-xs text-gray-400 mt-1">/100</div>
+          </div>
         </div>
       </div>
     )
@@ -568,103 +593,162 @@ export default function DashboardPage() {
         />
 
         {/* Main Content */}
-        <div className="flex-1 flex items-start justify-center px-3 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6">
+        <div className="flex-1 flex items-start justify-center px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl"
+          className="w-full max-w-2xl lg:max-w-5xl xl:max-w-6xl"
         >
-          {/* Always Visible Header */}
-          <div className="text-center mb-3 sm:mb-4 lg:mb-6">
-            <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-white mb-1 sm:mb-2 lg:mb-3">Optimize your resume</h2>
-            <p className="text-gray-300 text-xs sm:text-sm lg:text-base xl:text-lg mb-2 px-2 sm:px-4">
-              Get your resume optimized for ATS systems and significantly improve your match score.
-            </p>
+          {/* Enhanced Header Section */}
+          <div className="text-center mb-8 sm:mb-10 lg:mb-12">
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-3 sm:mb-4 bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent"
+            >
+              Optimize Your Resume
+            </motion.h1>
             
-            {/* How to Use This Tool - Dimmed Blue Info Card */}
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="text-gray-300 text-sm sm:text-base lg:text-lg xl:text-xl mb-6 sm:mb-8 max-w-2xl mx-auto leading-relaxed"
+            >
+              Get your resume optimized for ATS systems and significantly improve your match score with AI-powered analysis.
+            </motion.p>
+            
+            {/* Enhanced Tutorial Section */}
             {showTutorialBar && (
-              <div className="mt-3 sm:mt-4 mb-2 sm:mb-3">
-                <div className="bg-gradient-to-r from-blue-900/30 to-blue-800/30 backdrop-blur-sm border border-blue-700/30 rounded-lg p-2 sm:p-3 lg:p-4 relative overflow-hidden">
-                  {/* Subtle animated background */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="mb-8 sm:mb-10"
+              >
+                <div className="bg-gradient-to-r from-blue-900/20 to-indigo-900/20 backdrop-blur-xl border border-blue-700/20 rounded-2xl p-4 sm:p-6 relative overflow-hidden">
+                  {/* Animated background */}
                   <motion.div
-                    className="absolute inset-0 bg-gradient-to-r from-blue-800/20 to-blue-700/20"
+                    className="absolute inset-0 bg-gradient-to-r from-blue-800/10 to-indigo-800/10"
                     animate={{
-                      opacity: [0.2, 0.3, 0.2]
+                      opacity: [0.1, 0.2, 0.1]
                     }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                   />
                   
                   <div className="relative z-10">
                     <Collapsible open={isHowToOpen} onOpenChange={setIsHowToOpen}>
                       <CollapsibleTrigger className="w-full flex items-center justify-between text-left group">
-                        <div>
-                          <h3 className="text-blue-200 font-semibold text-sm sm:text-base">How to Use This Tool</h3>
-                          <p className="text-blue-300/70 text-xs">Important guidelines for best results</p>
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-600/30 rounded-lg flex items-center justify-center">
+                            <Lightbulb className="w-4 h-4 sm:w-5 sm:h-5 text-blue-300" />
+                          </div>
+                          <div>
+                            <h3 className="text-blue-100 font-semibold text-sm sm:text-base">Quick Guide</h3>
+                            <p className="text-blue-300/70 text-xs">5 steps to get the best results</p>
+                          </div>
                         </div>
-                        <ChevronDown className={`w-3 h-3 sm:w-4 sm:h-4 text-blue-400 transition-transform duration-200 ${isHowToOpen ? 'rotate-180' : ''} group-hover:text-blue-300`} />
+                        <ChevronDown className={`w-4 h-4 sm:w-5 sm:h-5 text-blue-400 transition-transform duration-200 ${isHowToOpen ? 'rotate-180' : ''} group-hover:text-blue-300`} />
                       </CollapsibleTrigger>
                       
-                      <CollapsibleContent className="mt-4">
-                        <div className="space-y-3 sm:space-y-4">
-                          <div className="space-y-3 sm:space-y-4 text-left">
-                            <div>
-                              <h4 className="text-blue-300 font-medium mb-1 text-sm sm:text-base">1. Insert your job description</h4>
-                              <p className="text-blue-200/80 text-xs sm:text-sm leading-relaxed">For best performance, add just the important stuff, not branding fluff. Focus on role requirements, skills, and qualifications. Use this only for specific jobs. You'll get faster responses with shorter, focused job descriptions.</p>
+                      <CollapsibleContent className="mt-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                          {/* Step 1 */}
+                          <div className="bg-blue-800/10 border border-blue-700/20 rounded-xl p-4">
+                            <div className="flex items-start space-x-3">
+                              <div className="w-6 h-6 bg-blue-600/40 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-blue-200 text-xs font-bold">1</span>
+                              </div>
+                              <div>
+                                <h4 className="text-blue-200 font-medium text-sm mb-2">Add Job Description</h4>
+                                <p className="text-blue-300/80 text-xs leading-relaxed">Focus on requirements, skills, and qualifications. Shorter, focused descriptions work better.</p>
+                              </div>
                             </div>
-                            
-                            <div>
-                              <h4 className="text-blue-300 font-medium mb-1 text-sm sm:text-base">2. Proofread keywords</h4>
-                              <p className="text-blue-200/80 text-xs sm:text-sm leading-relaxed">Once you add the description, the keywords and context section will popup. Review the extracted keywords carefully. Click to remove irrelevant ones or hold to edit them. These keywords directly impact your ATS score.</p>
+                          </div>
+
+                          {/* Step 2 */}
+                          <div className="bg-blue-800/10 border border-blue-700/20 rounded-xl p-4">
+                            <div className="flex items-start space-x-3">
+                              <div className="w-6 h-6 bg-blue-600/40 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-blue-200 text-xs font-bold">2</span>
+                              </div>
+                              <div>
+                                <h4 className="text-blue-200 font-medium text-sm mb-2">Review Keywords</h4>
+                                <p className="text-blue-300/80 text-xs leading-relaxed">Click to remove irrelevant keywords or hold to edit them. These impact your ATS score.</p>
+                              </div>
                             </div>
-                            
-                            <div>
-                              <h4 className="text-blue-300 font-medium mb-1 text-sm sm:text-base">3. Provide additional context</h4>
-                              <p className="text-blue-200/80 text-xs sm:text-sm leading-relaxed">Add as much relevant information as possible related to the job description - any experience, projects, skills, or accomplishments that align with the role. The AI won't make things up, so the more relevant details you provide, the higher your score will be.</p>
+                          </div>
+
+                          {/* Step 3 */}
+                          <div className="bg-blue-800/10 border border-blue-700/20 rounded-xl p-4">
+                            <div className="flex items-start space-x-3">
+                              <div className="w-6 h-6 bg-blue-600/40 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-blue-200 text-xs font-bold">3</span>
+                              </div>
+                              <div>
+                                <h4 className="text-blue-200 font-medium text-sm mb-2">Add Context</h4>
+                                <p className="text-blue-300/80 text-xs leading-relaxed">Include relevant experience, projects, and skills that align with the role.</p>
+                              </div>
                             </div>
-                            
-                            <div>
-                              <h4 className="text-blue-300 font-medium mb-1 text-sm sm:text-base">4. Best results requirements</h4>
-                              <p className="text-blue-200/80 text-xs sm:text-sm leading-relaxed">Jobs should ideally be in the same field, or your resume should already be roughly tailored to that industry. You won't get optimal results using a computer science resume for a sales position - ensure reasonable alignment between your background and target role.</p>
+                          </div>
+
+                          {/* Step 4 */}
+                          <div className="bg-blue-800/10 border border-blue-700/20 rounded-xl p-4">
+                            <div className="flex items-start space-x-3">
+                              <div className="w-6 h-6 bg-blue-600/40 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-blue-200 text-xs font-bold">4</span>
+                              </div>
+                              <div>
+                                <h4 className="text-blue-200 font-medium text-sm mb-2">Ensure Alignment</h4>
+                                <p className="text-blue-300/80 text-xs leading-relaxed">Your resume should be in the same field as the target role for best results.</p>
+                              </div>
                             </div>
-                            
-                            <div>
-                              <h4 className="text-blue-300 font-medium mb-1 text-sm sm:text-base">5. Proofread the results</h4>
-                              <p className="text-blue-200/80 text-xs sm:text-sm leading-relaxed">Always review the optimized resume carefully before using it. The AI may not always be 100% accurate, so check for any errors or inconsistencies and make necessary adjustments.</p>
+                          </div>
+
+                          {/* Step 5 */}
+                          <div className="bg-blue-800/10 border border-blue-700/20 rounded-xl p-4 md:col-span-2">
+                            <div className="flex items-start space-x-3">
+                              <div className="w-6 h-6 bg-blue-600/40 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-blue-200 text-xs font-bold">5</span>
+                              </div>
+                              <div>
+                                <h4 className="text-blue-200 font-medium text-sm mb-2">Review Results</h4>
+                                <p className="text-blue-300/80 text-xs leading-relaxed">Always proofread the optimized resume for accuracy before using it.</p>
+                              </div>
                             </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                          <div className="flex-1 bg-blue-800/20 border border-blue-700/30 rounded-xl p-4">
+                            <p className="text-blue-200/80 text-sm">
+                              <span className="text-blue-300 font-medium">Need to modify your resume?</span> Go to{' '}
+                              <button 
+                                onClick={() => router.push("/profile")}
+                                className="text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors duration-200"
+                              >
+                                Profile → Manage My Resume
+                              </button>
+                            </p>
                           </div>
                           
-                          <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
-                            <div className="flex-1 bg-blue-800/20 border border-blue-700/30 rounded-lg p-3">
-                              <p className="text-blue-200/80 text-xs sm:text-sm">
-                                <span className="text-blue-300 font-medium">Need to modify your resume?</span> Go to{' '}
-                                <button 
-                                  onClick={() => router.push("/profile")}
-                                  className="text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors duration-200"
-                                >
-                                  Profile → Manage My Resume
-                                </button>
-                              </p>
-                            </div>
-                            
-                            <div className="sm:w-20 bg-red-900/20 border border-red-700/30 rounded-lg p-2">
-                              <button 
-                                onClick={() => {
-                                  setShowTutorialBar(false)
-                                  localStorage.setItem('tutorialBarClosed', 'true')
-                                }}
-                                className="w-full text-red-400 hover:text-red-300 text-xs font-medium transition-colors duration-200"
-                              >
-                                Close
-                              </button>
-                            </div>
-                          </div>
+                          <button 
+                            onClick={() => {
+                              setShowTutorialBar(false)
+                              localStorage.setItem('tutorialBarClosed', 'true')
+                            }}
+                            className="px-4 py-2 bg-red-900/20 border border-red-700/30 rounded-xl text-red-400 hover:text-red-300 text-sm font-medium transition-colors duration-200"
+                          >
+                            Got it, close
+                          </button>
                         </div>
                       </CollapsibleContent>
                     </Collapsible>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
           </div>
 
@@ -734,85 +818,99 @@ export default function DashboardPage() {
               </motion.div>
             </motion.div>
           ) : (
-            <div className="bg-white/3 backdrop-blur-xl border border-white/5 rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 shadow-2xl space-y-3 sm:space-y-4 lg:space-y-5">
-            {/* Error Display handled by toasts */}
-
-
-
-            {/* Job Description Textarea */}
-            <div className="space-y-2 sm:space-y-3">
-              <label className="text-white font-medium flex items-center space-x-2 text-sm sm:text-base">
-                <Info className="w-4 h-4 text-[#00FFAA]" />
-                <span>Job Description</span>
-              </label>
-              <div className="relative">
-                <Textarea
-                  value={jobDescription}
-                  onChange={(e) => setJobDescription(e.target.value)}
-                  placeholder="Paste the full job description here...
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 sm:p-8 lg:p-10 shadow-2xl"
+            >
+              {/* Job Description Section */}
+              <div className="space-y-4 sm:space-y-5">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#00FFAA]/20 rounded-lg flex items-center justify-center">
+                    <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-[#00FFAA]" />
+                  </div>
+                  <div>
+                    <label className="text-white font-semibold text-base sm:text-lg">Job Description</label>
+                    <p className="text-gray-400 text-xs sm:text-sm">Paste the job posting you want to optimize for</p>
+                  </div>
+                </div>
+                
+                <div className="relative">
+                  <Textarea
+                    value={jobDescription}
+                    onChange={(e) => setJobDescription(e.target.value)}
+                    placeholder="Paste the full job description here...
 
 Include:
 • Job title and responsibilities
 • Required skills and qualifications
 • Experience requirements
 • Company information"
-                  className="min-h-[150px] sm:min-h-[180px] lg:min-h-[220px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 text-xs sm:text-sm lg:text-base leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-lg sm:rounded-xl"
-                />
+                    className="min-h-[180px] sm:min-h-[220px] lg:min-h-[250px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 text-sm sm:text-base leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-xl focus:bg-white/8 transition-all duration-300"
+                  />
 
-                <motion.div
-                  className="absolute inset-0 rounded-2xl pointer-events-none"
-                  animate={{
-                    boxShadow:
-                      jobDescription.length > 0
-                        ? "0 0 0 1px rgba(0,255,170,0.3), 0 0 20px rgba(0,255,170,0.1)"
-                        : "0 0 0 1px transparent",
-                  }}
-                  transition={{ duration: 0.3 }}
-                />
-              </div>
-            </div>
-
-            {/* Keywords & ATS Score Section */}
-            {(jobDescription.trim() || keywordsLoading || keywords.length > 0 || keywordsError) && (
-              <div className="space-y-2 sm:space-y-3">
-                <div className="space-y-1 sm:space-y-2">
-                  <label className="text-white font-medium flex items-center space-x-2 text-sm sm:text-base">
-                    <Sparkles className="w-4 h-4 text-[#00FFAA]" />
-                    <span>Analysis Results</span>
-                  </label>
-                  <p className="text-gray-400 text-xs sm:text-sm">
-                    These keywords aren't always accurate. Click to remove or hold to edit a keyword.
-                  </p>
+                  <motion.div
+                    className="absolute inset-0 rounded-xl pointer-events-none"
+                    animate={{
+                      boxShadow:
+                        jobDescription.length > 0
+                          ? "0 0 0 1px rgba(0,255,170,0.3), 0 0 30px rgba(0,255,170,0.1)"
+                          : "0 0 0 1px transparent",
+                    }}
+                    transition={{ duration: 0.3 }}
+                  />
                 </div>
+              </div>
+
+              {/* Keywords & ATS Score Section */}
+              {(jobDescription.trim() || keywordsLoading || keywords.length > 0 || keywordsError) && (
+                <div className="space-y-4 sm:space-y-5 mt-8 sm:mt-10">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#00FFAA]/20 rounded-lg flex items-center justify-center">
+                      <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-[#00FFAA]" />
+                    </div>
+                    <div>
+                      <label className="text-white font-semibold text-base sm:text-lg">Analysis Results</label>
+                      <p className="text-gray-400 text-xs sm:text-sm">
+                        These keywords aren't always accurate. Click to remove or hold to edit a keyword.
+                      </p>
+                    </div>
+                  </div>
                 
                 {keywordsLoading && (
-                  <div className="bg-white/5 border border-white/20 rounded-xl p-3 sm:p-4">
-                    <div className="flex items-center space-x-2">
+                  <div className="bg-white/5 border border-white/20 rounded-xl p-4 sm:p-6">
+                    <div className="flex items-center space-x-3">
                       <motion.div
                         animate={{ rotate: 360 }}
                         transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-                        className="w-4 h-4 border-2 border-[#00FFAA] border-t-transparent rounded-full"
+                        className="w-5 h-5 border-2 border-[#00FFAA] border-t-transparent rounded-full"
                       />
-                      <span className="text-gray-300 text-xs sm:text-sm">Extracting keywords and calculating ATS score...</span>
+                      <span className="text-gray-300 text-sm">Extracting keywords and calculating ATS score...</span>
                     </div>
                   </div>
                 )}
 
                 {keywordsError && (
-                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 sm:p-4">
-                    <p className="text-red-400 text-xs sm:text-sm">{keywordsError}</p>
+                  <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 sm:p-6">
+                    <p className="text-red-400 text-sm">{keywordsError}</p>
                   </div>
                 )}
 
                 {!keywordsLoading && !keywordsError && keywords.length > 0 && (
-                  <div className="space-y-3 sm:space-y-4">
-                    {/* Mobile/Tablet: Stack vertically, Desktop: Side by side */}
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="space-y-4 sm:space-y-6">
+                    {/* Enhanced Grid Layout */}
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
                       {/* Keywords Card */}
                       <div className="lg:col-span-3 order-2 lg:order-1">
-                        <div className="bg-white/5 border border-white/20 rounded-xl p-3 sm:p-4 h-full">
-                          <h4 className="text-white font-medium text-xs sm:text-sm mb-2 sm:mb-3">Extracted Keywords</h4>
-                          <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                        <div className="bg-white/5 border border-white/20 rounded-xl p-4 sm:p-6 h-full">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="text-white font-semibold text-sm sm:text-base">Extracted Keywords</h4>
+                            <span className="text-[#00FFAA] text-xs font-medium bg-[#00FFAA]/10 px-2 py-1 rounded-full">
+                              {keywords.length} keywords
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2 sm:gap-3">
                             {keywords.map((keyword, index) => (
                               <motion.div
                                 key={index}
@@ -835,7 +933,7 @@ Include:
                                       }}
                                       onBlur={handleSaveKeyword}
                                       autoFocus
-                                      className="px-2 py-1 bg-white/10 border border-[#00FFAA]/50 rounded-full text-white text-xs sm:text-sm font-medium outline-none focus:border-[#00FFAA] min-w-[60px] max-w-[120px]"
+                                      className="px-3 py-1.5 bg-white/10 border border-[#00FFAA]/50 rounded-full text-white text-sm font-medium outline-none focus:border-[#00FFAA] min-w-[80px] max-w-[150px]"
                                     />
                                   </div>
                                 ) : (
@@ -855,7 +953,7 @@ Include:
                                       document.addEventListener('mouseup', handleMouseUp)
                                     }}
                                     onClick={() => handleRemoveKeyword(index)}
-                                    className="px-2 sm:px-3 py-1 bg-gradient-to-r from-[#00FFAA]/20 to-[#00DD99]/20 border border-[#00FFAA]/30 rounded-full text-white text-xs sm:text-sm font-medium cursor-pointer transition-all duration-200 hover:from-red-500/30 hover:to-red-400/30 hover:border-red-400/50 hover:text-red-100 select-none inline-block"
+                                    className="px-3 py-1.5 bg-gradient-to-r from-[#00FFAA]/20 to-[#00DD99]/20 border border-[#00FFAA]/30 rounded-full text-white text-sm font-medium cursor-pointer transition-all duration-200 hover:from-red-500/30 hover:to-red-400/30 hover:border-red-400/50 hover:text-red-100 select-none inline-block shadow-sm"
                                   >
                                     {keyword}
                                   </motion.span>
@@ -863,40 +961,52 @@ Include:
                               </motion.div>
                             ))}
                           </div>
-                          <p className="text-gray-400 text-xs mt-2 sm:mt-3">
-                            {keywords.length} keywords extracted • These will be used to optimize your resume
+                          <p className="text-gray-400 text-xs mt-4">
+                            Click to remove • Hold to edit • These keywords will be used to optimize your resume
                           </p>
                         </div>
                       </div>
 
-                      {/* ATS Score Card */}
+                      {/* Enhanced ATS Score Card */}
                       <div className="lg:col-span-1 order-1 lg:order-2">
-                        <div className="bg-white/5 border border-white/20 rounded-lg p-2 sm:p-3 h-full flex flex-col items-center justify-center text-center min-h-[100px] sm:min-h-[120px]">
-                          <h4 className="text-white font-medium text-xs mb-2">ATS Score</h4>
+                        <div className="bg-gradient-to-br from-white/5 to-white/3 border border-white/20 rounded-xl p-4 sm:p-6 h-full flex flex-col items-center justify-center text-center min-h-[140px] sm:min-h-[160px]">
+                          <h4 className="text-white font-semibold text-sm mb-3">ATS Score</h4>
                           {currentAtsResult !== null ? (
-                                                          <>
-                                <div className="scale-75 sm:scale-90">
-                                  <AtsScoreCircle score={currentAtsResult.score} />
-                                </div>
-                              <p className="text-gray-400 text-xs mt-1 sm:mt-2">
-                                {currentAtsResult.score >= 80 
-                                  ? "Excellent!" 
-                                  : currentAtsResult.score >= 60 
-                                    ? "Good" 
-                                    : currentAtsResult.score >= 40 
-                                      ? "Needs work" 
-                                      : "Poor match"
-                                }
-                              </p>
+                            <>
+                              <div className="scale-90 sm:scale-100 mb-3">
+                                <AtsScoreCircle score={currentAtsResult.score} />
+                              </div>
+                              <div className="space-y-1">
+                                <p className="text-gray-300 text-sm font-medium">
+                                  {currentAtsResult.score >= 80 
+                                    ? "Excellent!" 
+                                    : currentAtsResult.score >= 60 
+                                      ? "Good" 
+                                      : currentAtsResult.score >= 40 
+                                        ? "Needs work" 
+                                        : "Poor match"
+                                  }
+                                </p>
+                                <p className="text-gray-400 text-xs">
+                                  {currentAtsResult.score >= 80 
+                                    ? "Great match for this role" 
+                                    : currentAtsResult.score >= 60 
+                                      ? "Good potential" 
+                                      : currentAtsResult.score >= 40 
+                                        ? "Room for improvement" 
+                                        : "Needs significant optimization"
+                                  }
+                                </p>
+                              </div>
                             </>
-                                                      ) : (
-                              <>
-                                <div className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-white/5 rounded-full border border-white/10 mb-2">
-                                  <span className="text-gray-400 text-xs">No Score</span>
-                                </div>
-                                <p className="text-gray-400 text-xs">Upload resume</p>
-                              </>
-                            )}
+                          ) : (
+                            <>
+                              <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center bg-white/5 rounded-full border border-white/10 mb-3">
+                                <span className="text-gray-400 text-xs">No Score</span>
+                              </div>
+                              <p className="text-gray-400 text-xs">Upload resume to see score</p>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -904,87 +1014,94 @@ Include:
                 )}
 
                 {!keywordsLoading && !keywordsError && keywords.length === 0 && jobDescription.trim() && (
-                  <div className="bg-white/5 border border-white/20 rounded-xl p-3 sm:p-4">
-                    <p className="text-gray-400 text-xs sm:text-sm">No keywords extracted. Try adding more technical details to the job description.</p>
+                  <div className="bg-white/5 border border-white/20 rounded-xl p-4 sm:p-6">
+                    <p className="text-gray-400 text-sm">No keywords extracted. Try adding more technical details to the job description.</p>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Notes Section */}
-            {keywords.length > 0 && !keywordsLoading && (
-              <div className="space-y-2 sm:space-y-3">
-                <label className="text-white font-medium flex items-center space-x-2 text-sm sm:text-base">
-                  <Info className="w-4 h-4 text-[#00FFAA]" />
-                  <span>Additional Instructions (Optional)</span>
-                </label>
-                <div className="relative">
-                  <Textarea
-                    value={userNotes}
-                    onChange={(e) => setUserNotes(e.target.value)}
-                    placeholder="Some examples: 
-                    - 'I once worked at X for Y months. We did a bunch of Z there, could you please add that in the experience section?
-                    - 'I made X project, here's the link: [link]. Add it to the projects section. I used React, ShadCn, and Supabase for backend.'
-                    - 'Change the name of my Project X to Project Y, and add a point about how I used railway for the backend'
-                    If you leave this blank, the AI will just optimize your resume based on the description."
-                    className="min-h-[80px] sm:min-h-[100px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 text-xs sm:text-sm leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-lg"
-                  />
-                  <motion.div
-                    className="absolute inset-0 rounded-xl pointer-events-none"
-                    animate={{
-                      boxShadow:
-                        userNotes.length > 0
-                          ? "0 0 0 1px rgba(0,255,170,0.3), 0 0 20px rgba(0,255,170,0.1)"
-                          : "0 0 0 1px transparent",
-                    }}
-                    transition={{ duration: 0.3 }}
-                  />
-                </div>
-                <p className="text-gray-400 text-xs">
-                  This helps the AI understand your priorities and context for better optimization.
-                </p>
-              </div>
-            )}
+              {/* Notes Section */}
+              {keywords.length > 0 && !keywordsLoading && (
+                <div className="space-y-4 sm:space-y-5 mt-8 sm:mt-10">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#00FFAA]/20 rounded-lg flex items-center justify-center">
+                      <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#00FFAA]" />
+                    </div>
+                    <div>
+                      <label className="text-white font-semibold text-base sm:text-lg">Additional Instructions (Optional)</label>
+                      <p className="text-gray-400 text-xs sm:text-sm">Help the AI understand your priorities and context</p>
+                    </div>
+                  </div>
+                  
+                  <div className="relative">
+                    <Textarea
+                      value={userNotes}
+                      onChange={(e) => setUserNotes(e.target.value)}
+                      placeholder="Some examples: 
+• 'I once worked at X for Y months. We did a bunch of Z there, could you please add that in the experience section?'
+• 'I made X project, here's the link: [link]. Add it to the projects section. I used React, ShadCn, and Supabase for backend.'
+• 'Change the name of my Project X to Project Y, and add a point about how I used railway for the backend'
 
-            <div className="flex justify-center mt-4 sm:mt-6">
-              <Button
-                onClick={handleSubmit}
-                disabled={!jobDescription.trim() || isSubmitting || keywordsLoading || keywords.length === 0}
-                className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-bold px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base rounded-lg hover:scale-105 transition-all duration-300 hover:shadow-[0_0_40px_rgba(0,255,170,0.4)] shadow-[0_0_20px_rgba(0,255,170,0.2)] disabled:opacity-50 disabled:hover:scale-100 w-full sm:w-auto"
-              >
-                {isSubmitting ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
-                    className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-black border-t-transparent rounded-full mr-2"
-                  />
-                ) : (
-                  <Sparkles className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
-                )}
-                {isSubmitting ? buttonText : "Start Optimization"}
-              </Button>
-            </div>
-          </div>
+If you leave this blank, the AI will just optimize your resume based on the description."
+                      className="min-h-[120px] sm:min-h-[140px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 text-sm leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-xl focus:bg-white/8 transition-all duration-300"
+                    />
+                    <motion.div
+                      className="absolute inset-0 rounded-xl pointer-events-none"
+                      animate={{
+                        boxShadow:
+                          userNotes.length > 0
+                            ? "0 0 0 1px rgba(0,255,170,0.3), 0 0 30px rgba(0,255,170,0.1)"
+                            : "0 0 0 1px transparent",
+                      }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Enhanced CTA Button */}
+              <div className="flex justify-center mt-8 sm:mt-10">
+                <Button
+                  onClick={handleSubmit}
+                  disabled={!jobDescription.trim() || isSubmitting || keywordsLoading || keywords.length === 0}
+                  className="bg-gradient-to-r from-[#00FFAA] to-[#00DD99] hover:from-[#00DD99] hover:to-[#00FFAA] text-black font-bold px-8 sm:px-10 py-3 sm:py-4 text-base sm:text-lg rounded-xl hover:scale-105 transition-all duration-300 hover:shadow-[0_0_50px_rgba(0,255,170,0.5)] shadow-[0_0_30px_rgba(0,255,170,0.3)] disabled:opacity-50 disabled:hover:scale-100 disabled:shadow-none w-full sm:w-auto min-w-[200px]"
+                >
+                  {isSubmitting ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                      className="w-5 h-5 sm:w-6 sm:h-6 border-2 border-black border-t-transparent rounded-full mr-3"
+                    />
+                  ) : (
+                    <Sparkles className="mr-3 h-5 w-5 sm:h-6 sm:w-6" />
+                  )}
+                  {isSubmitting ? buttonText : "Start AI Optimization"}
+                </Button>
+              </div>
+            </motion.div>
           )}
         </motion.div>
       </div>
 
-        {/* Footer */}
+        {/* Enhanced Footer */}
         <motion.footer
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 1.0, duration: 0.6 }}
-          className="text-center p-3 sm:p-4 z-10 mt-auto border-t border-white/5 bg-black/20 backdrop-blur-sm"
+          className="text-center p-4 sm:p-6 z-10 mt-auto border-t border-white/10 bg-gradient-to-r from-black/30 to-black/20 backdrop-blur-xl"
         >
-          <span className="text-gray-500 text-xs">Made by </span>
-          <a
-            href="https://khizarmalik.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-400 hover:text-[#00FFAA] transition-colors duration-300 border-b border-gray-400 hover:border-[#00FFAA] pb-1 font-medium text-xs"
-          >
-            Khizar Malik
-          </a>
+          <div className="flex items-center justify-center space-x-2">
+            <span className="text-gray-500 text-sm">Made by </span>
+            <a
+              href="https://khizarmalik.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-[#00FFAA] transition-all duration-300 border-b border-gray-400 hover:border-[#00FFAA] pb-1 font-medium text-sm hover:scale-105"
+            >
+              Khizar Malik
+            </a>
+          </div>
         </motion.footer>
       </motion.div>
     </div>
