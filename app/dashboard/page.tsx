@@ -953,7 +953,11 @@ Include:
                                       document.addEventListener('mouseup', handleMouseUp)
                                     }}
                                     onClick={() => handleRemoveKeyword(index)}
-                                    className="px-3 py-1.5 bg-gradient-to-r from-[#00FFAA]/20 to-[#00DD99]/20 border border-[#00FFAA]/30 rounded-full text-white text-sm font-medium cursor-pointer transition-all duration-200 hover:from-red-500/30 hover:to-red-400/30 hover:border-red-400/50 hover:text-red-100 select-none inline-block shadow-sm"
+                                    className={`px-3 py-1.5 rounded-full text-white text-sm font-medium cursor-pointer transition-all duration-200 hover:from-red-500/30 hover:to-red-400/30 hover:border-red-400/50 hover:text-red-100 select-none inline-block shadow-sm ${
+                                      currentAtsResult?.missingKeywords?.includes(keyword)
+                                        ? "bg-gradient-to-r from-yellow-500/20 to-yellow-400/20 border border-yellow-400/40"
+                                        : "bg-gradient-to-r from-[#00FFAA]/20 to-[#00DD99]/20 border border-[#00FFAA]/30"
+                                    }`}
                                   >
                                     {keyword}
                                   </motion.span>
