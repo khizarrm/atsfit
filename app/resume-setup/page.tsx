@@ -95,7 +95,6 @@ export default function ResumeSetupPage() {
         }
         
         fullText += pageText + '\n\n' // Double newline between pages
-        console.log("The full text from the pdf is: " fullText)
       }
 
       return fullText.trim()
