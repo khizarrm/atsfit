@@ -1,8 +1,6 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
 import { useState, useEffect, Suspense, lazy } from "react"
 import { Check, Upload, FileText, User, File } from "lucide-react"
 import { useAuth, getCachedUserData } from "@/contexts/auth-context"
@@ -11,7 +9,6 @@ import { validateResumeContent } from "@/lib/database/resume-operations"
 import { SharedHeader } from "@/components/shared-header"
 import { useRouter } from "next/navigation"
 import { convertResumeToMarkdown } from "@/lib/api"
-// PDF.js will be imported dynamically to avoid SSR issues
 
 const BackgroundGlow = lazy(() => import('@/components/BackgroundGlow'))
 
@@ -98,6 +95,7 @@ export default function ResumeSetupPage() {
         }
         
         fullText += pageText + '\n\n' // Double newline between pages
+        console.log("The full text from the pdf is: " fullText)
       }
 
       return fullText.trim()

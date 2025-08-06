@@ -60,22 +60,15 @@ export default function LoginPage() {
       } else {
         setIsRedirecting(true)
         
-        // First check cache for resume data (since signIn updates the cache)
         const cachedData = getCachedUserData()
         const userHasResumeInCache = !!cachedData?.resumeMd?.trim()
-        console.log("User has resume in cache:", userHasResumeInCache)
         
-        // Fallback to metadata if cache doesn't have resume info
         const userHasResumeFromMetadata = data?.user?.user_metadata?.has_resume || false
-        console.log("User has resume from metadata:", userHasResumeFromMetadata)
-        
         const userHasResume = userHasResumeInCache || userHasResumeFromMetadata
 
         if (userHasResume) {
-          console.log("Pushing to dashboard")
           router.push("/dashboard")
         } else {
-          console.log("Pushing to resume setup")
           router.push("/resume-setup")
         }
       }
