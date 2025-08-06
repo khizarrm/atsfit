@@ -147,7 +147,7 @@ importers:
         specifier: ^5.8.2
         version: 5.10.2(ws@8.18.3)(zod@3.25.76)
       pdfjs-dist:
-        specifier: ^5.3.93
+        specifier: ^5.4.54
         version: 5.4.54
       react:
         specifier: ^19.1.0

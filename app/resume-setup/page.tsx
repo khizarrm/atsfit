@@ -1,8 +1,9 @@
 "use client"
 
 import { motion } from "framer-motion"
+import * as pdfjsLib from 'pdfjs-dist'
 import { useState, useEffect, Suspense, lazy } from "react"
-import { Check, Upload, FileText, User, File } from "lucide-react"
+import { Upload, User, File } from "lucide-react"
 import { useAuth, getCachedUserData } from "@/contexts/auth-context"
 import { saveUserResume } from "@/lib/database/resume-operations"
 import { validateResumeContent } from "@/lib/database/resume-operations"
@@ -44,7 +45,9 @@ export default function ResumeSetupPage() {
       const pdfjsLib = await import('pdfjs-dist')
       
       try {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js'
+        
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString()
       } catch (workerError) {
         console.warn('Worker setup failed, falling back to main thread:', workerError)
         pdfjsLib.GlobalWorkerOptions.workerSrc = ''
@@ -58,13 +61,12 @@ export default function ResumeSetupPage() {
         const page = await pdf.getPage(pageNum)
         const textContent = await page.getTextContent()
         
-        // Sort items by position (top to bottom, left to right)
         const sortedItems = textContent.items
           .filter((item): item is any => 'str' in item && 'transform' in item)
           .sort((a, b) => {
-            const yDiff = b.transform[5] - a.transform[5] // Y coordinate (higher Y = higher on page)
-            if (Math.abs(yDiff) > 5) return yDiff > 0 ? 1 : -1 // Different lines
-            return a.transform[4] - b.transform[4] // Same line, sort by X coordinate
+            const yDiff = b.transform[5] - a.transform[5] 
+            if (Math.abs(yDiff) > 5) return yDiff > 0 ? 1 : -1 
+            return a.transform[4] - b.transform[4] 
           })
 
         let pageText = ''
