@@ -22,40 +22,36 @@ export async function POST(request: NextRequest) {
     }
 
     // The existing ChatGPT prompt from the resume-setup-view component
-    const chatGPTPrompt = `Convert the following resume text exactly as written into Markdown format.
+    const chatGPTPrompt = [
+      "Convert the following resume text exactly as written into Markdown format.",
+      "",
+      "Instructions (hard constraints — do NOT violate these):",
+      "- Do NOT add horizontal rules or section dividers of any kind. Forbidden examples include lines like: '---', '***', '___', or any line that consists only of repeated punctuation.",
+      "- Do NOT add extra blank lines. Do not insert empty lines before or after headings or between bullets. Keep only the line breaks required by the structure below.",
+      "- Do NOT add soft line breaks using two trailing spaces. Do not add <br> tags.",
+      "- Do NOT wrap the output in code fences. Return plain text Markdown only.",
+      "- Do NOT add any commentary, notes, or explanations.",
+      "",
+      "Formatting rules to apply:",
+      "- Use '#' (H1) only for my name at the very top.",
+      "- Use '###' (H3) for section headings (e.g., EXPERIENCE, EDUCATION, SKILLS, PROJECTS).",
+      "- Use '####' (H4) for company or project titles.",
+      "- Keep bullet points exactly as in my input; format bullets with a single '- ' (dash + space).",
+      "- Do NOT add a newline between a job title and the company name; keep both on the same line.",
+      "- **Bold** small categories and project names (e.g., Frameworks, Technologies).",
+      "- *Italicize* company names, but **bold** the names of positions.",
+      "- Underline quantifiable metrics using HTML underline tags, e.g., <u>10,000+</u>. Do NOT use underscores for underlining.",
+      "",
+      "General behavior:",
+      "- Preserve the original content and wording; only apply the formatting above.",
+      "- Do not invent headings, bullets, or text that are not present in the input.",
+      "",
+      "Output: plain text Markdown only (no code fences).",
+      "",
+      "Resume follows below:",
+      "___________________________________________________________"
+    ].join("\n");
 
-Instructions:
-
-Do not rephrase, rewrite, or edit any content. Do not change the format of the writing. 
-
-Use # (H1) only for my name at the top.
-
-Use ### (H3) for section headings (like EXPERIENCE, EDUCATION, SKILLS, PROJECTS).
-
-Use #### (H4) for company or project titles.
-
-Keep bullet points, line breaks, and formatting exactly as in my input. Do not add bullet points for project/experience titles, only for detailed points regarding an experience or project. 
-
-Output it as plain text so I can easily copy and paste it.
-
-Your only task is to strictly convert my resume to Markdown, preserving all content exactly.
-
-Bold small categories and project names, eg. Frameworks, Technologies. 
-
-Italicize company names, but bold the names of positions. 
-
-Underline quantifiable metrics. 
-
-Format bullet points with a '-'
-
-When returning, ensure you do not modify any content whatsoever. 
-
-Do not add a newline for job titles and company names: keep both on the same line.
-
-Resume follows below:
-___________________________________________________________`
-
-    // Make API call to OpenAI
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -63,7 +59,7 @@ ___________________________________________________________`
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
@@ -75,7 +71,7 @@ ___________________________________________________________`
           }
         ],
         max_tokens: 2000,
-        temperature: 0.1,
+        temperature: 0,
       }),
     })
 

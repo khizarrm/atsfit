@@ -139,14 +139,6 @@ export default function DashboardPage() {
     setCurrentStep("")
   }
 
-  const showError = (message: string) => {
-    console.error(message)
-  }
-
-  const showSuccess = (message: string) => {
-    console.log(message)
-  }
-
   const updateProgressSmooth = (targetProgress: number) => {
     if (progressInterval) {
       clearInterval(progressInterval)
@@ -174,7 +166,6 @@ export default function DashboardPage() {
     setProgressInterval(interval)
   }
 
-  // Keyword management functions
   const updateKeywords = (newKeywords: string[]) => {
     setKeywords(newKeywords)
   }
@@ -198,6 +189,7 @@ export default function DashboardPage() {
   }
 
   const handleSaveKeyword = () => {
+    console.log("save keyword")
     if (editingKeywordIndex !== null && editingKeywordValue.trim()) {
       const updatedKeywords = [...keywords]
       updatedKeywords[editingKeywordIndex] = editingKeywordValue.trim()
@@ -447,7 +439,6 @@ export default function DashboardPage() {
     )
   }
 
-  // Keyword extraction effect
   useEffect(() => {
     if (!jobDescription.trim()) {
       setKeywords([])
@@ -462,7 +453,6 @@ export default function DashboardPage() {
         const response = await extractKeywordsFromJobDescription(jobDescription)
         updateKeywords(response)
         
-        // Calculate ATS score if we have resume
         if (resumeMd) {
           setAtsLoading(true)
           const atsResult = calculateAtsScore(resumeMd, response)
@@ -490,7 +480,6 @@ export default function DashboardPage() {
           } else if (error.message.includes('timeout')) {
             errorMessage = 'Request timed out. Please try again.'
           } else {
-            // Use the original error message for other errors
             errorMessage = error.message
           }
         }
@@ -513,10 +502,8 @@ export default function DashboardPage() {
     }
   }, [progressInterval])
 
-  // Reset optimization state when component unmounts or user navigates away
   useEffect(() => {
     return () => {
-      // Reset optimization state to prevent lingering state issues
       setIsSubmitting(false)
       setOptimizationComplete(false)
       setResultsData(null)
@@ -1043,12 +1030,12 @@ Include:
                       value={userNotes}
                       onChange={(e) => setUserNotes(e.target.value)}
                       placeholder="Some examples: 
-• 'I once worked at X for Y months. We did a bunch of Z there, could you please add that in the experience section?'
-• 'I made X project, here's the link: [link]. Add it to the projects section. I used React, ShadCn, and Supabase for backend.'
-• 'Change the name of my Project X to Project Y, and add a point about how I used railway for the backend'
+            • 'I once worked at X for Y months. We did a bunch of Z there, could you please add that in the experience section?'
+            • 'I made X project, here's the link: [link]. Add it to the projects section. I used React, ShadCn, and Supabase for backend.'
+            • 'Change the name of my Project X to Project Y, and add a point about how I used railway for the backend'
 
-If you leave this blank, the AI will just optimize your resume based on the description."
-                      className="min-h-[120px] sm:min-h-[140px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 text-sm leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-xl focus:bg-white/8 transition-all duration-300"
+            If you leave this blank, the AI will just optimize your resume based on the description."
+                                  className="min-h-[120px] sm:min-h-[140px] bg-white/5 border-white/20 text-white placeholder:text-gray-500 text-sm leading-relaxed resize-none focus:border-[#00FFAA] focus:ring-[#00FFAA] rounded-xl focus:bg-white/8 transition-all duration-300"
                     />
                     <motion.div
                       className="absolute inset-0 rounded-xl pointer-events-none"
